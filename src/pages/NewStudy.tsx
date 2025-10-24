@@ -226,6 +226,20 @@ export default function NewStudy() {
                   <Trash2 className="mr-2 h-4 w-4" /> Eliminar ciclo
                 </Button>
               </div>
+              {/* Renombrar ciclo activo */}
+              <div className="space-y-2">
+                <Label htmlFor="cycle-name">Nombre del ciclo activo</Label>
+                <Input
+                  id="cycle-name"
+                  value={cycles[activeCycle]?.name ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCycles(prev => prev.map((c, idx) => idx === activeCycle ? { ...c, name: val } : c));
+                  }}
+                  maxLength={40}
+                  placeholder={`Ciclo ${activeCycle + 1}`}
+                />
+              </div>
             </CardContent>
           </Card>
 
