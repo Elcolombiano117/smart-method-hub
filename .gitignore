@@ -12,6 +12,24 @@ dist
 dist-ssr
 *.local
 
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Build/cache
+.vite/
+
+# Backup and temporary files
+*.backup
+*.bak
+*~
+*.tmp
+*.orig
+
+# Editor/IDE extras
+.history
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
