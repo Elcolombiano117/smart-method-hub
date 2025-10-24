@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Clock, Play, Pause, RotateCcw, Save } from "lucide-react";
+import { Clock, Play, Pause, RotateCcw, Save, Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -17,6 +17,9 @@ export default function NewStudy() {
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState(0);
   const [observedTimes, setObservedTimes] = useState<number[]>([]);
+  const [manualMin, setManualMin] = useState<string>("");
+  const [manualSec, setManualSec] = useState<string>("");
+  const [manualCs, setManualCs] = useState<string>("");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState({
@@ -71,6 +74,33 @@ export default function NewStudy() {
   const handleReset = () => {
     setIsRunning(false);
     setTime(0);
+  };
+
+  // Agregar tiempo observado manualmente (mm:ss.cc)
+  const handleAddManualTime = () => {
+    const m = manualMin === "" ? 0 : parseInt(manualMin, 10);
+    const s = manualSec === "" ? 0 : parseInt(manualSec, 10);
+    const c = manualCs === "" ? 0 : parseInt(manualCs, 10);
+
+    if (Number.isNaN(m) || Number.isNaN(s) || Number.isNaN(c)) {
+      toast.error("Valores inválidos. Usa números.");
+      return;
+    }
+    if (m < 0 || s < 0 || s > 59 || c < 0 || c > 99) {
+      toast.error("Rangos: min ≥ 0, seg 0-59, centésimas 0-99.");
+      return;
+    }
+
+    const ms = m * 60000 + s * 1000 + c * 10;
+    setObservedTimes(prev => [...prev, ms]);
+    setManualMin("");
+    setManualSec("");
+    setManualCs("");
+    toast.success("Tiempo agregado");
+  };
+
+  const handleRemoveObserved = (index: number) => {
+    setObservedTimes(prev => prev.filter((_, i) => i !== index));
   };
 
   const calculateTimes = () => {
@@ -208,15 +238,65 @@ export default function NewStudy() {
 
               <div>
                 <h3 className="font-semibold mb-2">Tiempos Observados ({observedTimes.length})</h3>
-                <div className="bg-muted rounded-lg p-4 max-h-40 overflow-y-auto">
+                {/* Formulario de entrada manual */}
+                <div className="flex items-end gap-2 mb-3">
+                  <div>
+                    <Label htmlFor="mm" className="text-xs">Min</Label>
+                    <Input
+                      id="mm"
+                      type="number"
+                      min={0}
+                      value={manualMin}
+                      onChange={(e) => setManualMin(e.target.value)}
+                      placeholder="00"
+                      className="w-20"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="ss" className="text-xs">Seg</Label>
+                    <Input
+                      id="ss"
+                      type="number"
+                      min={0}
+                      max={59}
+                      value={manualSec}
+                      onChange={(e) => setManualSec(e.target.value)}
+                      placeholder="00"
+                      className="w-20"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cc" className="text-xs">Centésimas</Label>
+                    <Input
+                      id="cc"
+                      type="number"
+                      min={0}
+                      max={99}
+                      value={manualCs}
+                      onChange={(e) => setManualCs(e.target.value)}
+                      placeholder="00"
+                      className="w-24"
+                    />
+                  </div>
+                  <Button type="button" onClick={handleAddManualTime} className="ml-1">
+                    <Plus className="mr-2 h-4 w-4" /> Agregar
+                  </Button>
+                </div>
+
+                <div className="bg-muted rounded-lg p-4 max-h-48 overflow-y-auto">
                   {observedTimes.length === 0 ? (
                     <p className="text-muted-foreground text-sm text-center">No hay mediciones aún</p>
                   ) : (
                     <div className="space-y-1">
                       {observedTimes.map((t, i) => (
-                        <div key={i} className="flex justify-between text-sm">
-                          <span>Ciclo {i + 1}:</span>
-                          <span className="font-mono">{formatTime(t)}</span>
+                        <div key={i} className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-3">
+                            <span>Obs {i + 1}:</span>
+                            <span className="font-mono">{formatTime(t)}</span>
+                          </div>
+                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => handleRemoveObserved(i)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
                         </div>
                       ))}
                     </div>
