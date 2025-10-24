@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const menuItems = [
-  { title: "Inicio", icon: Home, path: "/" },
+  { title: "Dashboard", icon: Home, path: "/dashboard" },
   { title: "Nuevo Estudio", icon: PlusCircle, path: "/nuevo-estudio" },
   { title: "Mis Estudios", icon: FolderOpen, path: "/mis-estudios" },
   { title: "Análisis", icon: BarChart3, path: "/analisis" },
