@@ -16,7 +16,11 @@ export default function NewStudy() {
   const { user } = useAuth();
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState(0);
-  const [observedTimes, setObservedTimes] = useState<number[]>([]);
+  // Ciclos con múltiples observaciones por ciclo
+  const [cycles, setCycles] = useState<{ name: string; observations: number[] }[]>([
+    { name: 'Ciclo 1', observations: [] },
+  ]);
+  const [activeCycle, setActiveCycle] = useState(0);
   const [manualMin, setManualMin] = useState<string>("");
   const [manualSec, setManualSec] = useState<string>("");
   const [manualCs, setManualCs] = useState<string>("");
@@ -59,7 +63,10 @@ export default function NewStudy() {
   const handleStart = () => {
     if (isRunning) {
       // Si está corriendo, registrar el tiempo
-      setObservedTimes([...observedTimes, time]);
+      setCycles(prev => prev.map((c, idx) => idx === activeCycle
+        ? { ...c, observations: [...c.observations, time] }
+        : c
+      ));
       setTime(0);
     } else {
       // Si no está corriendo, iniciarlo
@@ -92,7 +99,9 @@ export default function NewStudy() {
     }
 
     const ms = m * 60000 + s * 1000 + c * 10;
-    setObservedTimes(prev => [...prev, ms]);
+    setCycles(prev => prev.map((cycle, idx) =>
+      idx === activeCycle ? { ...cycle, observations: [...cycle.observations, ms] } : cycle
+    ));
     setManualMin("");
     setManualSec("");
     setManualCs("");
@@ -100,13 +109,15 @@ export default function NewStudy() {
   };
 
   const handleRemoveObserved = (index: number) => {
-    setObservedTimes(prev => prev.filter((_, i) => i !== index));
+    setCycles(prev => prev.map((cycle, idx) =>
+      idx === activeCycle ? { ...cycle, observations: cycle.observations.filter((_, i) => i !== index) } : cycle
+    ));
   };
 
-  const calculateTimes = () => {
-    if (observedTimes.length === 0) return { average: 0, normal: 0, standard: 0 };
+  const calculateTimes = (obs: number[]) => {
+    if (obs.length === 0) return { average: 0, normal: 0, standard: 0 };
     
-    const average = observedTimes.reduce((a, b) => a + b, 0) / observedTimes.length / 1000;
+    const average = obs.reduce((a, b) => a + b, 0) / obs.length / 1000;
     const normal = average * (formData.performanceRating / 100);
     const standard = normal * (1 + formData.supplementPercentage / 100);
     
@@ -119,17 +130,22 @@ export default function NewStudy() {
       return;
     }
 
-    const times = calculateTimes();
+    // Guardar métricas del Ciclo 1 como resumen principal
+    const firstCycleObs = cycles[0]?.observations ?? [];
+    const times = calculateTimes(firstCycleObs);
     
     try {
       const { error } = await supabase.from('studies').insert({
         user_id: user.id,
         process_name: formData.processName,
         description: formData.description,
-        cycles_count: observedTimes.length,
+        cycles_count: cycles.length,
         performance_rating: formData.performanceRating,
         supplement_percentage: formData.supplementPercentage,
-        observed_times: observedTimes,
+        // Guardamos estructura completa de ciclos en JSON
+        observed_times: {
+          cycles: cycles.map(c => ({ name: c.name, observations: c.observations }))
+        },
         average_time: times.average,
         normal_time: times.normal,
         standard_time: times.standard,
@@ -145,7 +161,8 @@ export default function NewStudy() {
     }
   };
 
-  const times = calculateTimes();
+  const currentObservations = cycles[activeCycle]?.observations ?? [];
+  const times = calculateTimes(currentObservations);
 
   return (
     <Layout>
@@ -156,6 +173,62 @@ export default function NewStudy() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Gestión de ciclos */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Ciclos</CardTitle>
+              <CardDescription>Administra ciclos y selecciona el activo</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {cycles.map((c, idx) => (
+                  <Button
+                    key={idx}
+                    variant={idx === activeCycle ? 'default' : 'outline'}
+                    onClick={() => setActiveCycle(idx)}
+                    className="h-8"
+                  >
+                    {c.name}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setCycles(prev => [...prev, { name: `Ciclo ${prev.length + 1}`, observations: [] }]);
+                    setActiveCycle(cycles.length);
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Añadir ciclo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={cycles.length === 1}
+                  onClick={() => {
+                    setCycles(prev => {
+                      if (prev.length === 1) return prev;
+                      const newArr = prev.filter((_, i) => i !== activeCycle);
+                      // Ajustar índice activo
+                      const newActive = Math.max(0, activeCycle - 1);
+                      setActiveCycle(newActive);
+                      return newArr.map((c, i) => ({
+                        ...c,
+                        // Reetiquetar nombres para mantener orden (opcional)
+                        name: c.name.startsWith('Ciclo ')
+                          ? `Ciclo ${i + 1}`
+                          : c.name,
+                      }));
+                    });
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Eliminar ciclo
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Información del Estudio</CardTitle>
@@ -211,7 +284,7 @@ export default function NewStudy() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Cronómetro
+                Cronómetro — {cycles[activeCycle]?.name ?? `Ciclo ${activeCycle + 1}`}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -237,7 +310,7 @@ export default function NewStudy() {
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">Tiempos Observados ({observedTimes.length})</h3>
+                <h3 className="font-semibold mb-2">Tiempos Observados — {cycles[activeCycle]?.name} ({currentObservations.length})</h3>
                 {/* Formulario de entrada manual */}
                 <div className="flex items-end gap-2 mb-3">
                   <div>
@@ -284,11 +357,11 @@ export default function NewStudy() {
                 </div>
 
                 <div className="bg-muted rounded-lg p-4 max-h-48 overflow-y-auto">
-                  {observedTimes.length === 0 ? (
+                  {currentObservations.length === 0 ? (
                     <p className="text-muted-foreground text-sm text-center">No hay mediciones aún</p>
                   ) : (
                     <div className="space-y-1">
-                      {observedTimes.map((t, i) => (
+                      {currentObservations.map((t, i) => (
                         <div key={i} className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-3">
                             <span>Obs {i + 1}:</span>
@@ -310,7 +383,7 @@ export default function NewStudy() {
         <Card>
           <CardHeader>
             <CardTitle>Resultados del Análisis</CardTitle>
-            <CardDescription>Cálculos automáticos basados en tus mediciones</CardDescription>
+            <CardDescription>Cálculos basados en el ciclo activo y resumen por ciclo</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -328,8 +401,36 @@ export default function NewStudy() {
               </div>
             </div>
 
+            {/* Resumen por ciclo */}
+            <div className="mt-6">
+              <h4 className="font-semibold mb-2">Resumen por ciclo</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {cycles.map((c, idx) => {
+                  const t = calculateTimes(c.observations);
+                  return (
+                    <div key={idx} className="p-4 rounded-lg border bg-card">
+                      <p className="font-medium mb-1">{c.name}</p>
+                      <p className="text-xs text-muted-foreground mb-2">Observaciones: {c.observations.length}</p>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Promedio</span>
+                        <span className="font-mono">{t.average.toFixed(2)}s</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Normal</span>
+                        <span className="font-mono">{t.normal.toFixed(2)}s</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Estándar</span>
+                        <span className="font-mono text-primary">{t.standard.toFixed(2)}s</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="mt-6 flex justify-end">
-              <Button onClick={handleSave} size="lg" disabled={observedTimes.length === 0}>
+              <Button onClick={handleSave} size="lg" disabled={currentObservations.length === 0 && cycles.every(c => c.observations.length === 0)}>
                 <Save className="mr-2 h-5 w-5" />
                 Guardar Estudio
               </Button>
