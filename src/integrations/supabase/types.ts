@@ -14,7 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          company: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          position: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          position?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          position?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      studies: {
+        Row: {
+          average_time: number | null
+          conclusions: string | null
+          created_at: string | null
+          cycles_count: number | null
+          description: string | null
+          id: string
+          normal_time: number | null
+          observed_times: Json | null
+          performance_rating: number | null
+          process_name: string
+          recommendations: string | null
+          standard_time: number | null
+          status: string | null
+          supplement_percentage: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          average_time?: number | null
+          conclusions?: string | null
+          created_at?: string | null
+          cycles_count?: number | null
+          description?: string | null
+          id?: string
+          normal_time?: number | null
+          observed_times?: Json | null
+          performance_rating?: number | null
+          process_name: string
+          recommendations?: string | null
+          standard_time?: number | null
+          status?: string | null
+          supplement_percentage?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          average_time?: number | null
+          conclusions?: string | null
+          created_at?: string | null
+          cycles_count?: number | null
+          description?: string | null
+          id?: string
+          normal_time?: number | null
+          observed_times?: Json | null
+          performance_rating?: number | null
+          process_name?: string
+          recommendations?: string | null
+          standard_time?: number | null
+          status?: string | null
+          supplement_percentage?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studies_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
