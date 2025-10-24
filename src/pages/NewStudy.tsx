@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Clock, Play, Pause, RotateCcw, Save, Plus, Trash2 } from "lucide-react";
+import { Clock, Play, Pause, RotateCcw, Save, Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -25,6 +25,9 @@ export default function NewStudy() {
   const [manualSec, setManualSec] = useState<string>("");
   const [manualCs, setManualCs] = useState<string>("");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Edición de nombres de ciclo en línea
+  const [editingCycleIndex, setEditingCycleIndex] = useState<number | null>(null);
+  const [editingCycleName, setEditingCycleName] = useState<string>("");
   
   const [formData, setFormData] = useState({
     processName: '',
@@ -182,14 +185,70 @@ export default function NewStudy() {
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {cycles.map((c, idx) => (
-                  <Button
-                    key={idx}
-                    variant={idx === activeCycle ? 'default' : 'outline'}
-                    onClick={() => setActiveCycle(idx)}
-                    className="h-8"
-                  >
-                    {c.name}
-                  </Button>
+                  <div key={idx} className="flex items-center gap-1">
+                    {editingCycleIndex === idx ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          value={editingCycleName}
+                          onChange={(e) => setEditingCycleName(e.target.value)}
+                          className="h-8 w-36"
+                          maxLength={40}
+                        />
+                        <Button
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            const newName = editingCycleName.trim();
+                            if (!newName) {
+                              setEditingCycleIndex(null);
+                              setEditingCycleName("");
+                              return;
+                            }
+                            setCycles(prev => prev.map((cyc, i) => i === idx ? { ...cyc, name: newName } : cyc));
+                            setEditingCycleIndex(null);
+                            setEditingCycleName("");
+                          }}
+                          title="Confirmar"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setEditingCycleIndex(null);
+                            setEditingCycleName("");
+                          }}
+                          title="Cancelar"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant={idx === activeCycle ? 'default' : 'outline'}
+                          onClick={() => setActiveCycle(idx)}
+                          className="h-8"
+                        >
+                          {c.name}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setEditingCycleIndex(idx);
+                            setEditingCycleName(c.name);
+                          }}
+                          title="Renombrar"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
               <div className="flex gap-2">
