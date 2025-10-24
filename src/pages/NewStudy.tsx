@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ export default function NewStudy() {
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState(0);
   const [observedTimes, setObservedTimes] = useState<number[]>([]);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState({
     processName: '',
@@ -24,6 +25,26 @@ export default function NewStudy() {
     performanceRating: 100,
     supplementPercentage: 15,
   });
+
+  // Effect para manejar el cronómetro
+  useEffect(() => {
+    if (isRunning) {
+      intervalRef.current = setInterval(() => {
+        setTime(prev => prev + 10);
+      }, 10);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isRunning]);
 
   const formatTime = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
@@ -34,15 +55,12 @@ export default function NewStudy() {
 
   const handleStart = () => {
     if (isRunning) {
+      // Si está corriendo, registrar el tiempo
       setObservedTimes([...observedTimes, time]);
       setTime(0);
     } else {
+      // Si no está corriendo, iniciarlo
       setIsRunning(true);
-      const interval = setInterval(() => {
-        setTime(prev => prev + 10);
-      }, 10);
-      
-      return () => clearInterval(interval);
     }
   };
 
