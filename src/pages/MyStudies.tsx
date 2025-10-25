@@ -123,7 +123,12 @@ export default function MyStudies() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => navigate(`/estudio/${study.id}`)}
+                      >
                       <Eye className="mr-2 h-4 w-4" />
                       Ver
                     </Button>

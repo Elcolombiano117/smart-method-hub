@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NewStudy from "./pages/NewStudy";
 import MyStudies from "./pages/MyStudies";
+import StudyDetail from "./pages/StudyDetail";
 import Analysis from "./pages/Analysis";
 import Profile from "./pages/Profile";
 import Help from "./pages/Help";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/nuevo-estudio" element={<ProtectedRoute><NewStudy /></ProtectedRoute>} />
             <Route path="/mis-estudios" element={<ProtectedRoute><MyStudies /></ProtectedRoute>} />
+            <Route path="/estudio/:id" element={<ProtectedRoute><StudyDetail /></ProtectedRoute>} />
             <Route path="/analisis" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
             <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/ayuda" element={<ProtectedRoute><Help /></ProtectedRoute>} />
