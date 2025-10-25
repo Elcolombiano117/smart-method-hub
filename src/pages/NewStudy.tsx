@@ -368,45 +368,48 @@ export default function NewStudy() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Display del cronómetro */}
-              <div className="flex flex-col items-center space-y-4">
-                <div className="text-7xl font-mono font-bold text-primary tracking-wider">
-                  {formatTime(time)}
+              {/* Display del cronómetro y botones en horizontal */}
+              <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
+                {/* Display del tiempo */}
+                <div className="flex-shrink-0">
+                  <div className="text-5xl lg:text-6xl font-mono font-bold text-primary tracking-wider">
+                    {formatTime(time)}
+                  </div>
                 </div>
                 
-                {/* Botones de control agrupados */}
-                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+                {/* Botones de control en vertical */}
+                <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-[200px]">
                   <Button
                     onClick={handleStart}
-                    size="lg"
-                    className={`flex-1 ${isRunning ? 'bg-green-600 hover:bg-green-700' : 'bg-primary'}`}
+                    size="default"
+                    className={`w-full ${isRunning ? 'bg-green-600 hover:bg-green-700' : 'bg-primary'}`}
                   >
                     {isRunning ? (
                       <>
-                        <Save className="mr-2 h-5 w-5" /> Registrar
+                        <Save className="mr-2 h-4 w-4" /> Registrar
                       </>
                     ) : (
                       <>
-                        <Play className="mr-2 h-5 w-5" /> Iniciar
+                        <Play className="mr-2 h-4 w-4" /> Iniciar
                       </>
                     )}
                   </Button>
                   <Button 
                     onClick={handlePause} 
                     variant="outline" 
-                    size="lg"
-                    className="flex-1"
+                    size="default"
+                    className="w-full"
                     disabled={!isRunning}
                   >
-                    <Pause className="mr-2 h-5 w-5" /> Pausar
+                    <Pause className="mr-2 h-4 w-4" /> Pausar
                   </Button>
                   <Button 
                     onClick={handleReset} 
                     variant="outline" 
-                    size="lg"
-                    className="flex-1"
+                    size="default"
+                    className="w-full"
                   >
-                    <RotateCcw className="mr-2 h-5 w-5" /> Reiniciar
+                    <RotateCcw className="mr-2 h-4 w-4" /> Reiniciar
                   </Button>
                 </div>
               </div>
