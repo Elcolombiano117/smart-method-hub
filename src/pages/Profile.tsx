@@ -12,12 +12,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Profile() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
@@ -81,16 +85,38 @@ export default function Profile() {
     }
 
     try {
-      setIsUploading(true);
-
       // Procesar imagen: recortar a cuadrado y comprimir a WebP 512x512
       const processed = await processImageToSquareWebp(file, 512, 0.85);
+      // Crear URL para previsualizar
+      const url = URL.createObjectURL(processed);
+      setPendingBlob(processed);
+      setPreviewUrl(url);
+      setPreviewOpen(true);
+    } catch (err: any) {
+      toast.error(err?.message || 'No se pudo procesar la imagen');
+    } finally {
+      // limpiar input para permitir volver a seleccionar el mismo archivo
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const clearPreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setPendingBlob(null);
+    setPreviewOpen(false);
+  };
+
+  const uploadProcessedAvatar = async () => {
+    if (!pendingBlob || !user?.id) return;
+    try {
+      setIsUploading(true);
       const ext = 'webp';
       const path = `${user.id}/${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(path, processed, { cacheControl: '3600', upsert: true, contentType: processed.type });
+        .upload(path, pendingBlob, { cacheControl: '3600', upsert: true, contentType: pendingBlob.type });
 
       if (uploadError) throw uploadError;
 
@@ -106,6 +132,7 @@ export default function Profile() {
 
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Foto de perfil actualizada');
+      clearPreview();
     } catch (err: any) {
       if (err?.message?.includes('does not exist') || err?.statusCode === '404') {
         toast.error('No existe el bucket "avatars" en Supabase. Créalo y habilita acceso público.');
@@ -114,8 +141,6 @@ export default function Profile() {
       }
     } finally {
       setIsUploading(false);
-      // limpiar input para permitir volver a seleccionar el mismo archivo
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -293,6 +318,26 @@ export default function Profile() {
                   {isUploading ? 'Subiendo...' : 'Subir Imagen'}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2">Formatos recomendados: JPG, PNG, WEBP. Tamaño máximo ~5MB.</p>
+
+                <Dialog open={previewOpen} onOpenChange={(open) => !open && clearPreview()}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Vista previa de tu avatar</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex justify-center">
+                      {previewUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={previewUrl} alt="Vista previa" className="w-48 h-48 rounded-full object-cover border" />
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={clearPreview} disabled={isUploading}>Cancelar</Button>
+                      <Button onClick={uploadProcessedAvatar} disabled={isUploading}>
+                        {isUploading ? 'Subiendo...' : 'Confirmar y subir'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           </TabsContent>
