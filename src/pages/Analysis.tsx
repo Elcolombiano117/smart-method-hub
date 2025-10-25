@@ -281,6 +281,48 @@ export default function Analysis() {
               }}>
                 <FileText className="h-4 w-4 mr-2" /> Exportar PDF
               </Button>
+              <Button variant="default" size="sm" onClick={async () => {
+                if (!printRef.current) return;
+                const el = printRef.current;
+                try {
+                  // Cargar libs dinámicamente para evitar problemas de tipos
+                  const { default: html2canvas } = await import('html2canvas') as any;
+                  const { default: JsPDF } = await import('jspdf') as any;
+                  // Usar html2canvas para rasterizar el contenido
+                  const canvas = await html2canvas(el, {
+                    backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--background') || '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                  });
+                  const imgData = canvas.toDataURL('image/png');
+                  const pdf = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'p' });
+
+                  const pageWidth = 210; // A4 mm
+                  const pageHeight = 297; // A4 mm
+                  const imgWidth = pageWidth;
+                  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                  let heightLeft = imgHeight;
+                  let position = 0;
+
+                  pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+                  heightLeft -= pageHeight;
+                  while (heightLeft > 0) {
+                    position = heightLeft - imgHeight; // posición negativa para seguir la imagen
+                    pdf.addPage('a4', 'p');
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+                    heightLeft -= pageHeight;
+                  }
+
+                  const safeName = (activeStudy?.process_name || 'analisis').replace(/[^a-z0-9-_]+/gi, '_');
+                  pdf.save(`${safeName}_analisis.pdf`);
+                } catch (e) {
+                  console.error(e);
+                  alert('No se pudo generar el PDF automáticamente. Usa la opción Exportar PDF (Imprimir) para guardar.');
+                }
+              }}>
+                <FileText className="h-4 w-4 mr-2" /> Descargar PDF
+              </Button>
             </div>
           )}
         </div>
