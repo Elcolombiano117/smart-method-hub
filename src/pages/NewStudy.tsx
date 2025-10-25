@@ -368,46 +368,48 @@ export default function NewStudy() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Cronómetro: Display grande centrado + Botones horizontales a la derecha */}
-              <div className="flex flex-col lg:flex-row items-center justify-between gap-6 p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border">
-                {/* Display del tiempo - grande y centrado */}
-                <div className="flex-1 flex justify-center">
-                  <div className="text-7xl lg:text-8xl font-mono font-bold text-primary tracking-wider">
+              {/* Display del cronómetro y botones en horizontal */}
+              <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
+                {/* Display del tiempo */}
+                <div className="flex-shrink-0">
+                  <div className="text-5xl lg:text-6xl font-mono font-bold text-primary tracking-wider">
                     {formatTime(time)}
                   </div>
                 </div>
                 
-                {/* Botones de control - horizontales a la derecha */}
-                <div className="flex flex-row gap-3">
+                {/* Botones de control en vertical */}
+                <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-[200px]">
                   <Button
                     onClick={handleStart}
-                    size="lg"
-                    className={`${isRunning ? 'bg-green-600 hover:bg-green-700' : 'bg-primary'}`}
+                    size="default"
+                    className={`w-full ${isRunning ? 'bg-green-600 hover:bg-green-700' : 'bg-primary'}`}
                   >
                     {isRunning ? (
                       <>
-                        <Save className="mr-2 h-5 w-5" /> Registrar
+                        <Save className="mr-2 h-4 w-4" /> Registrar
                       </>
                     ) : (
                       <>
-                        <Play className="mr-2 h-5 w-5" /> Iniciar
+                        <Play className="mr-2 h-4 w-4" /> Iniciar
                       </>
                     )}
                   </Button>
                   <Button 
                     onClick={handlePause} 
                     variant="outline" 
-                    size="lg"
+                    size="default"
+                    className="w-full"
                     disabled={!isRunning}
                   >
-                    <Pause className="mr-2 h-5 w-5" /> Pausar
+                    <Pause className="mr-2 h-4 w-4" /> Pausar
                   </Button>
                   <Button 
                     onClick={handleReset} 
                     variant="outline" 
-                    size="lg"
+                    size="default"
+                    className="w-full"
                   >
-                    <RotateCcw className="mr-2 h-5 w-5" /> Reiniciar
+                    <RotateCcw className="mr-2 h-4 w-4" /> Reiniciar
                   </Button>
                 </div>
               </div>
@@ -476,48 +478,38 @@ export default function NewStudy() {
                   </div>
                 </div>
 
-                {/* Tabla de observaciones */}
-                <div className="rounded-lg border overflow-hidden">
+                {/* Lista de observaciones mejorada */}
+                <div className="bg-muted/30 rounded-lg p-4 max-h-64 overflow-y-auto border">
                   {currentObservations.length === 0 ? (
-                    <div className="text-center py-12 bg-muted/20">
+                    <div className="text-center py-8">
                       <Clock className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                       <p className="text-muted-foreground text-sm">No hay observaciones registradas</p>
                       <p className="text-muted-foreground text-xs mt-1">Usa el cronómetro o agrega tiempos manualmente</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-muted/50">
-                          <tr>
-                            <th className="text-left px-4 py-3 text-sm font-semibold">#</th>
-                            <th className="text-left px-4 py-3 text-sm font-semibold">Tiempo</th>
-                            <th className="text-right px-4 py-3 text-sm font-semibold">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                          {currentObservations.map((t, i) => (
-                            <tr key={i} className="hover:bg-accent/5 transition-colors">
-                              <td className="px-4 py-3 text-sm text-muted-foreground">
-                                Obs #{i + 1}
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="font-mono text-lg font-semibold">{formatTime(t)}</span>
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-8 w-8 p-0 hover:bg-destructive/10" 
-                                  onClick={() => handleRemoveObserved(i)}
-                                  title="Eliminar observación"
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="space-y-2">
+                      {currentObservations.map((t, i) => (
+                        <div 
+                          key={i} 
+                          className="flex items-center justify-between p-3 bg-background rounded-md hover:bg-accent/5 transition-colors"
+                        >
+                          <div className="flex items-center gap-4">
+                            <span className="text-xs font-medium text-muted-foreground w-16">
+                              Obs #{i + 1}
+                            </span>
+                            <span className="font-mono text-lg font-semibold">{formatTime(t)}</span>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0 hover:bg-destructive/10" 
+                            onClick={() => handleRemoveObserved(i)}
+                            title="Eliminar observación"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
