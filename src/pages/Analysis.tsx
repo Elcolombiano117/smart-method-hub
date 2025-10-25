@@ -11,9 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Button } from "@/components/ui/button";
+import { FileText } from "lucide-react";
 
 type Study = {
   id: string;
@@ -30,6 +32,8 @@ type Study = {
 export default function Analysis() {
   const { user } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [range, setRange] = useState<"all" | "7" | "30" | "90">("all");
+  const printRef = useRef<HTMLDivElement | null>(null);
 
   const { data: studies, isLoading } = useQuery({
     queryKey: ["analysis-studies", user?.id],
@@ -48,9 +52,39 @@ export default function Analysis() {
 
   const activeStudy: Study | null = useMemo(() => {
     if (!studies || studies.length === 0) return null;
-    if (selectedId) return studies.find((s) => s.id === selectedId) || studies[0];
-    return studies[0];
-  }, [studies, selectedId]);
+    // Filtrar por rango
+    const filtered = studies.filter((s) => {
+      if (range === "all") return true;
+      if (!s.created_at) return false;
+      const days = parseInt(range, 10);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      return new Date(s.created_at) >= cutoff;
+    });
+    if (filtered.length === 0) return null;
+    if (selectedId) return filtered.find((s) => s.id === selectedId) || filtered[0];
+    return filtered[0];
+  }, [studies, selectedId, range]);
+
+  // Asegurar que el seleccionado exista tras cambiar el filtro
+  useEffect(() => {
+    if (!studies || studies.length === 0) return;
+    const filtered = studies.filter((s) => {
+      if (range === "all") return true;
+      if (!s.created_at) return false;
+      const days = parseInt(range, 10);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      return new Date(s.created_at) >= cutoff;
+    });
+    if (filtered.length === 0) {
+      setSelectedId(null);
+      return;
+    }
+    if (!selectedId || !filtered.some((s) => s.id === selectedId)) {
+      setSelectedId(filtered[0].id);
+    }
+  }, [range, studies]);
 
   const observedTimesSec = useMemo(() => {
     if (!activeStudy?.observed_times || !("cycles" in activeStudy.observed_times)) return [] as number[];
@@ -134,19 +168,65 @@ export default function Analysis() {
             <p className="text-muted-foreground">Visualiza estadísticas y tendencias de tus estudios</p>
           </div>
           {studies && studies.length > 0 && (
-            <div className="min-w-64">
-              <Select value={activeStudy?.id ?? undefined} onValueChange={(v) => setSelectedId(v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar estudio" />
-                </SelectTrigger>
-                <SelectContent>
-                  {studies.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.process_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="min-w-64">
+                <Select value={activeStudy?.id ?? undefined} onValueChange={(v) => setSelectedId(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar estudio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {studies
+                      .filter((s) => {
+                        if (range === "all") return true;
+                        if (!s.created_at) return false;
+                        const days = parseInt(range, 10);
+                        const cutoff = new Date();
+                        cutoff.setDate(cutoff.getDate() - days);
+                        return new Date(s.created_at) >= cutoff;
+                      })
+                      .map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.process_name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-40">
+                <Select value={range} onValueChange={(v) => setRange(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Rango" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="7">Últimos 7 días</SelectItem>
+                    <SelectItem value="30">Últimos 30 días</SelectItem>
+                    <SelectItem value="90">Últimos 90 días</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => {
+                if (!printRef.current) return;
+                const content = printRef.current;
+                const printWindow = window.open("", "_blank", "width=1024,height=768");
+                if (!printWindow) return;
+                const doc = printWindow.document;
+                doc.open();
+                // Copiar estilos
+                const styles = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
+                  .map((node) => (node as HTMLElement).outerHTML)
+                  .join("\n");
+                doc.write(`<!doctype html><html><head><meta charset='utf-8'/>${styles}<title>Análisis</title></head><body><div id='print-root'>${content.innerHTML}</div></body></html>`);
+                doc.close();
+                // Esperar a que carguen los estilos y SVG
+                printWindow.focus();
+                setTimeout(() => {
+                  printWindow.print();
+                  printWindow.close();
+                }, 400);
+              }}>
+                <FileText className="h-4 w-4 mr-2" /> Exportar PDF
+              </Button>
             </div>
           )}
         </div>
@@ -161,7 +241,7 @@ export default function Analysis() {
               {isLoading ? "Cargando…" : activeStudy ? `Estudio: ${activeStudy.process_name}` : "Crea un estudio para ver el análisis"}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent ref={printRef}>
             {!activeStudy ? (
               <div className="text-center py-12 text-muted-foreground">No hay estudios para analizar.</div>
             ) : (
