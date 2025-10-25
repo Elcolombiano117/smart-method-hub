@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 export default function Profile() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
@@ -64,6 +66,54 @@ export default function Profile() {
 
   const handleSaveProfile = () => {
     updateProfileMutation.mutate(profileData);
+  };
+
+  const handleOpenFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor selecciona una imagen');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const path = `${user.id}/${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(path);
+      const publicUrl = publicData.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      toast.success('Foto de perfil actualizada');
+    } catch (err: any) {
+      if (err?.message?.includes('does not exist') || err?.statusCode === '404') {
+        toast.error('No existe el bucket "avatars" en Supabase. Créalo y habilita acceso público.');
+      } else {
+        toast.error(err?.message || 'Error al subir la imagen');
+      }
+    } finally {
+      setIsUploading(false);
+      // limpiar input para permitir volver a seleccionar el mismo archivo
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleChangePassword = async () => {
@@ -177,10 +227,18 @@ export default function Profile() {
                 <CardDescription>Sube una imagen para tu perfil</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <Button variant="outline" onClick={handleOpenFilePicker} disabled={isUploading}>
                   <Upload className="mr-2 h-4 w-4" />
-                  Subir Imagen
+                  {isUploading ? 'Subiendo...' : 'Subir Imagen'}
                 </Button>
+                <p className="text-xs text-muted-foreground mt-2">Formatos recomendados: JPG, PNG, WEBP. Tamaño máximo ~5MB.</p>
               </CardContent>
             </Card>
           </TabsContent>
