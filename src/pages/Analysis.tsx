@@ -159,6 +159,26 @@ export default function Analysis() {
     },
   } as const;
 
+  // Datos por ciclo: promedio por ciclo en segundos
+  const cyclesChartData = useMemo(() => {
+    if (!activeStudy?.observed_times || !("cycles" in activeStudy.observed_times)) return [] as { ciclo: string; promedio: number; count: number }[];
+    const cycles = (activeStudy.observed_times as any).cycles as { name: string; observations: number[] }[];
+    return cycles
+      .map((c) => {
+        const secs = (c.observations || []).map((ms) => ms / 1000);
+        const avg = secs.length ? secs.reduce((a, b) => a + b, 0) / secs.length : 0;
+        return { ciclo: c.name || "Ciclo", promedio: Number(avg.toFixed(2)), count: secs.length };
+      })
+      .filter((d) => d.count > 0);
+  }, [activeStudy]);
+
+  const cyclesChartConfig = {
+    promedio: {
+      label: "Promedio por ciclo (s)",
+      color: "hsl(var(--primary))",
+    },
+  } as const;
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -277,6 +297,24 @@ export default function Analysis() {
                         <YAxis tickLine={false} axisLine={false} tickMargin={8} />
                         <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                         <Bar dataKey="tiempo" fill="var(--color-tiempo)" radius={4} />
+                        <ChartLegend content={<ChartLegendContent />} />
+                      </BarChart>
+                    </ChartContainer>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Promedio por ciclo</h3>
+                  {cyclesChartData.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">Sin ciclos con observaciones.</div>
+                  ) : (
+                    <ChartContainer config={cyclesChartConfig} className="w-full">
+                      <BarChart data={cyclesChartData}>
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                        <XAxis dataKey="ciclo" tickLine={false} axisLine={false} tickMargin={8} />
+                        <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                        <Bar dataKey="promedio" fill="var(--color-promedio)" radius={4} />
                         <ChartLegend content={<ChartLegendContent />} />
                       </BarChart>
                     </ChartContainer>
