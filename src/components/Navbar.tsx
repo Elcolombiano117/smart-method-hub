@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { useEffect, useMemo, useState } from "react";
 
 export const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -53,6 +54,51 @@ export const Navbar = () => {
     enabled: !!user?.id,
   });
 
+  // Estado de "no leídas" persistido por usuario en localStorage
+  const storageKey = user?.id ? `notifications_read_${user.id}` : null;
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!storageKey) {
+      setReadIds(new Set());
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(storageKey);
+      const parsed = raw ? (JSON.parse(raw) as string[]) : [];
+      setReadIds(new Set(parsed));
+    } catch {
+      setReadIds(new Set());
+    }
+  }, [storageKey]);
+
+  const saveReadIds = (ids: Set<string>) => {
+    if (!storageKey) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(Array.from(ids)));
+    } catch {}
+  };
+
+  const unreadCount = useMemo(() => {
+    if (!notifications || notifications.length === 0) return 0;
+    return notifications.reduce((acc: number, n: any) => acc + (readIds.has(n.id) ? 0 : 1), 0);
+  }, [notifications, readIds]);
+
+  const markAsRead = (id: string) => {
+    setReadIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      saveReadIds(next);
+      return next;
+    });
+  };
+
+  const markAllAsRead = () => {
+    const all = new Set((notifications ?? []).map((n: any) => n.id as string));
+    setReadIds(all);
+    saveReadIds(all);
+  };
+
   const getInitials = () => {
     const name = profile?.full_name || user?.email || 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -78,15 +124,26 @@ export const Navbar = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative" aria-label="Notificaciones">
                 <Bell className="h-5 w-5" />
-                {(notifications && notifications.length > 0) && (
+                {unreadCount > 0 ? (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-accent text-white text-[10px] leading-4 text-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                ) : (notifications && notifications.length > 0) ? (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full"></span>
-                )}
+                ) : null}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 p-0">
-              <div className="p-3 border-b">
-                <p className="text-sm font-semibold">Notificaciones</p>
-                <p className="text-xs text-muted-foreground">Últimas actividades de tus estudios</p>
+              <div className="p-3 border-b flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold">Notificaciones</p>
+                  <p className="text-xs text-muted-foreground">Últimas actividades de tus estudios</p>
+                </div>
+                {(notifications && notifications.length > 0) && (
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={markAllAsRead}>
+                    Marcar todas
+                  </Button>
+                )}
               </div>
               <div className="max-h-80 overflow-auto">
                 {(!notifications || notifications.length === 0) ? (
@@ -99,9 +156,17 @@ export const Navbar = () => {
                       <div
                         key={n.id}
                         className="px-3 py-2 hover:bg-muted/50 cursor-pointer"
-                        onClick={() => navigate(`/estudio/${n.id}`)}
+                        onClick={() => {
+                          markAsRead(n.id);
+                          navigate(`/estudio/${n.id}`);
+                        }}
                       >
-                        <p className="text-sm font-medium">{n.process_name}</p>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-medium">{n.process_name}</p>
+                          {!readIds.has(n.id) && (
+                            <span className="mt-0.5 inline-block w-2 h-2 rounded-full bg-primary" aria-label="No leído" />
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           {n.status === 'completed' ? 'Completado' : n.status === 'in_progress' ? 'En progreso' : 'Creado'} • {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: es })}
                         </p>
