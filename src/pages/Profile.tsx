@@ -82,12 +82,15 @@ export default function Profile() {
 
     try {
       setIsUploading(true);
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+
+      // Procesar imagen: recortar a cuadrado y comprimir a WebP 512x512
+      const processed = await processImageToSquareWebp(file, 512, 0.85);
+      const ext = 'webp';
       const path = `${user.id}/${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type });
+        .upload(path, processed, { cacheControl: '3600', upsert: true, contentType: processed.type });
 
       if (uploadError) throw uploadError;
 
@@ -114,6 +117,57 @@ export default function Profile() {
       // limpiar input para permitir volver a seleccionar el mismo archivo
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  // Utilidad: recortar al centro y comprimir a WebP
+  const processImageToSquareWebp = async (file: File, targetSize = 512, quality = 0.85): Promise<Blob> => {
+    const img = await fileToImage(file);
+    const { width: w, height: h } = img;
+    const size = Math.min(w, h);
+    const sx = (w - size) / 2;
+    const sy = (h - size) / 2;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetSize;
+    canvas.height = targetSize;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('No se pudo crear el contexto de canvas');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, sx, sy, size, size, 0, 0, targetSize, targetSize);
+
+    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
+    if (blob) return blob;
+    // Fallback
+    const dataUrl = canvas.toDataURL('image/webp', quality);
+    return dataURLToBlob(dataUrl);
+  };
+
+  const fileToImage = async (file: File): Promise<HTMLImageElement> => {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = url;
+      });
+      return img;
+    } finally {
+      // no revocamos aún por si canvas requiere relectura; safe to revoke here
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const dataURLToBlob = (dataUrl: string): Blob => {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/webp';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
   };
 
   const handleChangePassword = async () => {
