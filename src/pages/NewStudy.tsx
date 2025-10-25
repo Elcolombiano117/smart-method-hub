@@ -368,86 +368,141 @@ export default function NewStudy() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="text-center">
-                <div className="text-6xl font-mono font-bold text-primary mb-6">
+              {/* Display del cronómetro */}
+              <div className="flex flex-col items-center space-y-4">
+                <div className="text-7xl font-mono font-bold text-primary tracking-wider">
                   {formatTime(time)}
                 </div>
-                <div className="flex gap-3 justify-center">
+                
+                {/* Botones de control agrupados */}
+                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
                   <Button
                     onClick={handleStart}
                     size="lg"
-                    className={isRunning ? 'bg-accent hover:bg-accent/90' : ''}
+                    className={`flex-1 ${isRunning ? 'bg-green-600 hover:bg-green-700' : 'bg-primary'}`}
                   >
-                    {isRunning ? <><Pause className="mr-2 h-5 w-5" /> Registrar</> : <><Play className="mr-2 h-5 w-5" /> Iniciar</>}
+                    {isRunning ? (
+                      <>
+                        <Save className="mr-2 h-5 w-5" /> Registrar
+                      </>
+                    ) : (
+                      <>
+                        <Play className="mr-2 h-5 w-5" /> Iniciar
+                      </>
+                    )}
                   </Button>
-                  <Button onClick={handlePause} variant="outline" size="lg">
+                  <Button 
+                    onClick={handlePause} 
+                    variant="outline" 
+                    size="lg"
+                    className="flex-1"
+                    disabled={!isRunning}
+                  >
                     <Pause className="mr-2 h-5 w-5" /> Pausar
                   </Button>
-                  <Button onClick={handleReset} variant="outline" size="lg">
-                    <RotateCcw className="mr-2 h-5 w-5" /> Reset
+                  <Button 
+                    onClick={handleReset} 
+                    variant="outline" 
+                    size="lg"
+                    className="flex-1"
+                  >
+                    <RotateCcw className="mr-2 h-5 w-5" /> Reiniciar
                   </Button>
                 </div>
               </div>
 
-              <div>
-                <h3 className="font-semibold mb-2">Tiempos Observados — {cycles[activeCycle]?.name} ({currentObservations.length})</h3>
-                {/* Formulario de entrada manual */}
-                <div className="flex items-end gap-2 mb-3">
-                  <div>
-                    <Label htmlFor="mm" className="text-xs">Min</Label>
-                    <Input
-                      id="mm"
-                      type="number"
-                      min={0}
-                      value={manualMin}
-                      onChange={(e) => setManualMin(e.target.value)}
-                      placeholder="00"
-                      className="w-20"
-                    />
+              {/* Separador visual */}
+              <div className="border-t pt-6">
+                <h3 className="font-semibold text-lg mb-4">
+                  Tiempos Observados — {cycles[activeCycle]?.name} 
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                    ({currentObservations.length} observaciones)
+                  </span>
+                </h3>
+                
+                {/* Formulario de entrada manual mejorado */}
+                <div className="bg-muted/50 rounded-lg p-4 mb-4">
+                  <Label className="text-sm font-medium mb-3 block">Agregar tiempo manualmente</Label>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="flex-1 min-w-[80px]">
+                      <Label htmlFor="mm" className="text-xs text-muted-foreground mb-1 block">Minutos</Label>
+                      <Input
+                        id="mm"
+                        type="number"
+                        min={0}
+                        value={manualMin}
+                        onChange={(e) => setManualMin(e.target.value)}
+                        placeholder="00"
+                        className="text-center font-mono"
+                      />
+                    </div>
+                    <span className="text-2xl font-bold text-muted-foreground pb-2">:</span>
+                    <div className="flex-1 min-w-[80px]">
+                      <Label htmlFor="ss" className="text-xs text-muted-foreground mb-1 block">Segundos</Label>
+                      <Input
+                        id="ss"
+                        type="number"
+                        min={0}
+                        max={59}
+                        value={manualSec}
+                        onChange={(e) => setManualSec(e.target.value)}
+                        placeholder="00"
+                        className="text-center font-mono"
+                      />
+                    </div>
+                    <span className="text-2xl font-bold text-muted-foreground pb-2">.</span>
+                    <div className="flex-1 min-w-[80px]">
+                      <Label htmlFor="cc" className="text-xs text-muted-foreground mb-1 block">Centésimas</Label>
+                      <Input
+                        id="cc"
+                        type="number"
+                        min={0}
+                        max={99}
+                        value={manualCs}
+                        onChange={(e) => setManualCs(e.target.value)}
+                        placeholder="00"
+                        className="text-center font-mono"
+                      />
+                    </div>
+                    <Button 
+                      type="button" 
+                      onClick={handleAddManualTime}
+                      size="lg"
+                      className="flex-shrink-0"
+                    >
+                      <Plus className="mr-2 h-5 w-5" /> Agregar
+                    </Button>
                   </div>
-                  <div>
-                    <Label htmlFor="ss" className="text-xs">Seg</Label>
-                    <Input
-                      id="ss"
-                      type="number"
-                      min={0}
-                      max={59}
-                      value={manualSec}
-                      onChange={(e) => setManualSec(e.target.value)}
-                      placeholder="00"
-                      className="w-20"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cc" className="text-xs">Centésimas</Label>
-                    <Input
-                      id="cc"
-                      type="number"
-                      min={0}
-                      max={99}
-                      value={manualCs}
-                      onChange={(e) => setManualCs(e.target.value)}
-                      placeholder="00"
-                      className="w-24"
-                    />
-                  </div>
-                  <Button type="button" onClick={handleAddManualTime} className="ml-1">
-                    <Plus className="mr-2 h-4 w-4" /> Agregar
-                  </Button>
                 </div>
 
-                <div className="bg-muted rounded-lg p-4 max-h-48 overflow-y-auto">
+                {/* Lista de observaciones mejorada */}
+                <div className="bg-muted/30 rounded-lg p-4 max-h-64 overflow-y-auto border">
                   {currentObservations.length === 0 ? (
-                    <p className="text-muted-foreground text-sm text-center">No hay mediciones aún</p>
+                    <div className="text-center py-8">
+                      <Clock className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                      <p className="text-muted-foreground text-sm">No hay observaciones registradas</p>
+                      <p className="text-muted-foreground text-xs mt-1">Usa el cronómetro o agrega tiempos manualmente</p>
+                    </div>
                   ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {currentObservations.map((t, i) => (
-                        <div key={i} className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-3">
-                            <span>Obs {i + 1}:</span>
-                            <span className="font-mono">{formatTime(t)}</span>
+                        <div 
+                          key={i} 
+                          className="flex items-center justify-between p-3 bg-background rounded-md hover:bg-accent/5 transition-colors"
+                        >
+                          <div className="flex items-center gap-4">
+                            <span className="text-xs font-medium text-muted-foreground w-16">
+                              Obs #{i + 1}
+                            </span>
+                            <span className="font-mono text-lg font-semibold">{formatTime(t)}</span>
                           </div>
-                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => handleRemoveObserved(i)}>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0 hover:bg-destructive/10" 
+                            onClick={() => handleRemoveObserved(i)}
+                            title="Eliminar observación"
+                          >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
