@@ -372,7 +372,7 @@ export default function NewStudy() {
               <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
                 {/* Display del tiempo */}
                 <div className="flex-shrink-0">
-                  <div className="text-5xl lg:text-6xl font-mono font-bold text-primary tracking-wider">
+                  <div className="text-4xl lg:text-5xl font-mono font-bold text-primary tracking-normal leading-tight">
                     {formatTime(time)}
                   </div>
                 </div>
