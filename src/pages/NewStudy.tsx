@@ -377,39 +377,39 @@ export default function NewStudy() {
                   </div>
                 </div>
                 
-                {/* Botones de control en vertical */}
+                {/* Botones de control en vertical (compactos) */}
                 <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-[200px]">
                   <Button
                     onClick={handleStart}
-                    size="default"
+                    size="sm"
                     className={`w-full ${isRunning ? 'bg-green-600 hover:bg-green-700' : 'bg-primary'}`}
                   >
                     {isRunning ? (
                       <>
-                        <Save className="mr-2 h-4 w-4" /> Registrar
+                        <Save className="mr-2 h-3 w-3" /> Registrar
                       </>
                     ) : (
                       <>
-                        <Play className="mr-2 h-4 w-4" /> Iniciar
+                        <Play className="mr-2 h-3 w-3" /> Iniciar
                       </>
                     )}
                   </Button>
                   <Button 
                     onClick={handlePause} 
                     variant="outline" 
-                    size="default"
+                    size="sm"
                     className="w-full"
                     disabled={!isRunning}
                   >
-                    <Pause className="mr-2 h-4 w-4" /> Pausar
+                    <Pause className="mr-2 h-3 w-3" /> Pausar
                   </Button>
                   <Button 
                     onClick={handleReset} 
                     variant="outline" 
-                    size="default"
+                    size="sm"
                     className="w-full"
                   >
-                    <RotateCcw className="mr-2 h-4 w-4" /> Reiniciar
+                    <RotateCcw className="mr-2 h-3 w-3" /> Reiniciar
                   </Button>
                 </div>
               </div>
