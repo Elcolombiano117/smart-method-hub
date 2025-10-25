@@ -37,6 +37,7 @@ export default function Analysis() {
   const printRef = useRef<HTMLDivElement | null>(null);
   const [showAvg, setShowAvg] = useState(true);
   const [showStd, setShowStd] = useState(true);
+  const [showObs, setShowObs] = useState(true);
 
   // Persistir switches por usuario
   const prefsKey = user?.id ? `analysis_series_prefs_${user.id}` : null;
@@ -48,6 +49,7 @@ export default function Analysis() {
         const parsed = JSON.parse(raw);
         if (typeof parsed.showAvg === 'boolean') setShowAvg(parsed.showAvg);
         if (typeof parsed.showStd === 'boolean') setShowStd(parsed.showStd);
+        if (typeof parsed.showObs === 'boolean') setShowObs(parsed.showObs);
       }
     } catch {}
   }, [prefsKey]);
@@ -55,9 +57,9 @@ export default function Analysis() {
   useEffect(() => {
     if (!prefsKey) return;
     try {
-      localStorage.setItem(prefsKey, JSON.stringify({ showAvg, showStd }));
+      localStorage.setItem(prefsKey, JSON.stringify({ showAvg, showStd, showObs }));
     } catch {}
-  }, [prefsKey, showAvg, showStd]);
+  }, [prefsKey, showAvg, showStd, showObs]);
 
   const { data: studies, isLoading } = useQuery({
     queryKey: ["analysis-studies", user?.id],
@@ -318,7 +320,15 @@ export default function Analysis() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">Tiempos observados</h3>
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <h3 className="text-lg font-semibold">Tiempos observados</h3>
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Switch checked={showObs} onCheckedChange={setShowObs} id="toggle-obs" />
+                        <label htmlFor="toggle-obs" className="cursor-pointer">Observados</label>
+                      </div>
+                    </div>
+                  </div>
                   {chartData.length === 0 ? (
                     <div className="text-sm text-muted-foreground">Sin observaciones registradas.</div>
                   ) : (
@@ -328,7 +338,11 @@ export default function Analysis() {
                         <XAxis dataKey="obs" tickLine={false} axisLine={false} tickMargin={8} />
                         <YAxis tickLine={false} axisLine={false} tickMargin={8} />
                         <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                        <Bar dataKey="tiempo" fill="var(--color-tiempo)" radius={4} />
+                        {showObs && (
+                          <Bar dataKey="tiempo" fill="var(--color-tiempo)" radius={4}>
+                            <LabelList dataKey="tiempo" position="top" formatter={(v: number) => v.toFixed(2)} className="fill-foreground/80" />
+                          </Bar>
+                        )}
                         <ChartLegend content={<ChartLegendContent />} />
                       </BarChart>
                     </ChartContainer>
