@@ -127,15 +127,20 @@ export default function NewStudy() {
     return { average, normal, standard };
   };
 
+  // Calcular tiempo estándar general de todos los ciclos
+  const calculateGeneralTimes = () => {
+    const allObservations = cycles.flatMap(c => c.observations);
+    return calculateTimes(allObservations);
+  };
+
   const handleSave = async () => {
     if (!user || !formData.processName) {
       toast.error('Por favor completa el nombre del proceso');
       return;
     }
 
-    // Guardar métricas del Ciclo 1 como resumen principal
-    const firstCycleObs = cycles[0]?.observations ?? [];
-    const times = calculateTimes(firstCycleObs);
+    // Calcular tiempo estándar general (todas las observaciones de todos los ciclos)
+    const generalTimes = calculateGeneralTimes();
     
     try {
       const { error } = await supabase.from('studies').insert({
@@ -149,9 +154,10 @@ export default function NewStudy() {
         observed_times: {
           cycles: cycles.map(c => ({ name: c.name, observations: c.observations }))
         },
-        average_time: times.average,
-        normal_time: times.normal,
-        standard_time: times.standard,
+        // Guardar métricas generales basadas en todas las observaciones
+        average_time: generalTimes.average,
+        normal_time: generalTimes.normal,
+        standard_time: generalTimes.standard,
         status: 'completed',
       });
 
@@ -166,6 +172,7 @@ export default function NewStudy() {
 
   const currentObservations = cycles[activeCycle]?.observations ?? [];
   const times = calculateTimes(currentObservations);
+  const generalTimes = calculateGeneralTimes();
 
   return (
     <Layout>
@@ -459,18 +466,47 @@ export default function NewStudy() {
             <CardDescription>Cálculos basados en el ciclo activo y resumen por ciclo</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">Tiempo Promedio</p>
-                <p className="text-2xl font-bold">{times.average.toFixed(2)}s</p>
+            {/* Tiempo estándar general de todos los ciclos */}
+            <div className="mb-6 p-6 rounded-lg border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+              <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                Tiempo Estándar General (Todos los Ciclos)
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-background/80 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Tiempo Promedio</p>
+                  <p className="text-xl font-bold">{generalTimes.average.toFixed(2)}s</p>
+                </div>
+                <div className="text-center p-4 bg-background/80 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Tiempo Normal</p>
+                  <p className="text-xl font-bold">{generalTimes.normal.toFixed(2)}s</p>
+                </div>
+                <div className="text-center p-4 bg-primary/20 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Tiempo Estándar</p>
+                  <p className="text-2xl font-bold text-primary">{generalTimes.standard.toFixed(2)}s</p>
+                </div>
               </div>
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">Tiempo Normal</p>
-                <p className="text-2xl font-bold">{times.normal.toFixed(2)}s</p>
-              </div>
-              <div className="text-center p-4 bg-primary/10 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">Tiempo Estándar</p>
-                <p className="text-2xl font-bold text-primary">{times.standard.toFixed(2)}s</p>
+              <p className="text-xs text-muted-foreground mt-3 text-center">
+                Basado en {cycles.flatMap(c => c.observations).length} observaciones totales de {cycles.length} ciclo(s)
+              </p>
+            </div>
+
+            {/* Resultados del ciclo activo */}
+            <div className="mb-6">
+              <h4 className="font-semibold mb-3">Resultados del Ciclo Activo ({cycles[activeCycle]?.name})</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Tiempo Promedio</p>
+                  <p className="text-2xl font-bold">{times.average.toFixed(2)}s</p>
+                </div>
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Tiempo Normal</p>
+                  <p className="text-2xl font-bold">{times.normal.toFixed(2)}s</p>
+                </div>
+                <div className="text-center p-4 bg-primary/10 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Tiempo Estándar</p>
+                  <p className="text-2xl font-bold text-primary">{times.standard.toFixed(2)}s</p>
+                </div>
               </div>
             </div>
 
