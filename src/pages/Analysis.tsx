@@ -38,6 +38,27 @@ export default function Analysis() {
   const [showAvg, setShowAvg] = useState(true);
   const [showStd, setShowStd] = useState(true);
 
+  // Persistir switches por usuario
+  const prefsKey = user?.id ? `analysis_series_prefs_${user.id}` : null;
+  useEffect(() => {
+    if (!prefsKey) return;
+    try {
+      const raw = localStorage.getItem(prefsKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.showAvg === 'boolean') setShowAvg(parsed.showAvg);
+        if (typeof parsed.showStd === 'boolean') setShowStd(parsed.showStd);
+      }
+    } catch {}
+  }, [prefsKey]);
+
+  useEffect(() => {
+    if (!prefsKey) return;
+    try {
+      localStorage.setItem(prefsKey, JSON.stringify({ showAvg, showStd }));
+    } catch {}
+  }, [prefsKey, showAvg, showStd]);
+
   const { data: studies, isLoading } = useQuery({
     queryKey: ["analysis-studies", user?.id],
     queryFn: async () => {
