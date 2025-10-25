@@ -5,19 +5,25 @@ import { Clock, FileText, BarChart3, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const { data: studies } = useQuery({
-    queryKey: ['studies-count'],
+  const { data: studies, isLoading } = useQuery({
+    queryKey: ['studies-count', user?.id],
     queryFn: async () => {
+      if (!user) return [] as any[];
       const { data, error } = await supabase
         .from('studies')
-        .select('*', { count: 'exact', head: true });
+        .select('id, status')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
       if (error) throw error;
-      return data;
+      return data as any[];
     },
+    enabled: !!user,
   });
 
   const stats = [
