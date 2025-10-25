@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/select";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 type Study = {
   id: string;
@@ -34,6 +35,8 @@ export default function Analysis() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [range, setRange] = useState<"all" | "7" | "30" | "90">("all");
   const printRef = useRef<HTMLDivElement | null>(null);
+  const [showAvg, setShowAvg] = useState(true);
+  const [showStd, setShowStd] = useState(true);
 
   const { data: studies, isLoading } = useQuery({
     queryKey: ["analysis-studies", user?.id],
@@ -312,7 +315,19 @@ export default function Analysis() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">Promedio y estándar por ciclo</h3>
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <h3 className="text-lg font-semibold">Promedio y estándar por ciclo</h3>
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Switch checked={showAvg} onCheckedChange={setShowAvg} id="toggle-avg" />
+                        <label htmlFor="toggle-avg" className="cursor-pointer">Promedio</label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch checked={showStd} onCheckedChange={setShowStd} id="toggle-std" />
+                        <label htmlFor="toggle-std" className="cursor-pointer">Estándar</label>
+                      </div>
+                    </div>
+                  </div>
                   {cyclesChartData.length === 0 ? (
                     <div className="text-sm text-muted-foreground">Sin ciclos con observaciones.</div>
                   ) : (
@@ -322,8 +337,16 @@ export default function Analysis() {
                         <XAxis dataKey="ciclo" tickLine={false} axisLine={false} tickMargin={8} />
                         <YAxis tickLine={false} axisLine={false} tickMargin={8} />
                         <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                        <Bar dataKey="promedio" fill="var(--color-promedio)" radius={4} />
-                        <Bar dataKey="estandar" fill="var(--color-estandar)" radius={4} />
+                        {showAvg && (
+                          <Bar dataKey="promedio" fill="var(--color-promedio)" radius={4}>
+                            <LabelList dataKey="promedio" position="top" formatter={(v: number) => v.toFixed(2)} className="fill-foreground/80" />
+                          </Bar>
+                        )}
+                        {showStd && (
+                          <Bar dataKey="estandar" fill="var(--color-estandar)" radius={4}>
+                            <LabelList dataKey="estandar" position="top" formatter={(v: number) => v.toFixed(2)} className="fill-foreground/80" />
+                          </Bar>
+                        )}
                         <ChartLegend content={<ChartLegendContent />} />
                       </BarChart>
                     </ChartContainer>
