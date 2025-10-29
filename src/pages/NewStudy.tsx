@@ -176,18 +176,18 @@ export default function NewStudy() {
 
   return (
     <Layout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Nuevo Estudio de Tiempos</h1>
-          <p className="text-muted-foreground">Registra y analiza tus mediciones</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Nuevo Estudio de Tiempos</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Registra y analiza tus mediciones</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Gestión de ciclos */}
           <Card>
             <CardHeader>
-              <CardTitle>Ciclos</CardTitle>
-              <CardDescription>Administra ciclos y selecciona el activo</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Ciclos</CardTitle>
+              <CardDescription className="text-sm sm:text-base">Administra ciclos y selecciona el activo</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
@@ -198,12 +198,12 @@ export default function NewStudy() {
                         <Input
                           value={editingCycleName}
                           onChange={(e) => setEditingCycleName(e.target.value)}
-                          className="h-8 w-36"
+                          className="h-9 w-32 sm:w-36 text-sm"
                           maxLength={40}
                         />
                         <Button
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-9 w-9"
                           onClick={() => {
                             const newName = editingCycleName.trim();
                             if (!newName) {
@@ -222,7 +222,7 @@ export default function NewStudy() {
                         <Button
                           size="icon"
                           variant="outline"
-                          className="h-8 w-8"
+                          className="h-9 w-9"
                           onClick={() => {
                             setEditingCycleIndex(null);
                             setEditingCycleName("");
@@ -237,14 +237,14 @@ export default function NewStudy() {
                         <Button
                           variant={idx === activeCycle ? 'default' : 'outline'}
                           onClick={() => setActiveCycle(idx)}
-                          className="h-8"
+                          className="h-9 text-sm px-3"
                         >
                           {c.name}
                         </Button>
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8"
+                          className="h-9 w-9"
                           onClick={() => {
                             setEditingCycleIndex(idx);
                             setEditingCycleName(c.name);
@@ -258,13 +258,14 @@ export default function NewStudy() {
                   </div>
                 ))}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   type="button"
                   onClick={() => {
                     setCycles(prev => [...prev, { name: `Ciclo ${prev.length + 1}`, observations: [] }]);
                     setActiveCycle(cycles.length);
                   }}
+                  className="w-full sm:flex-1 h-10"
                 >
                   <Plus className="mr-2 h-4 w-4" /> Añadir ciclo
                 </Button>
@@ -276,25 +277,23 @@ export default function NewStudy() {
                     setCycles(prev => {
                       if (prev.length === 1) return prev;
                       const newArr = prev.filter((_, i) => i !== activeCycle);
-                      // Ajustar índice activo
                       const newActive = Math.max(0, activeCycle - 1);
                       setActiveCycle(newActive);
                       return newArr.map((c, i) => ({
                         ...c,
-                        // Reetiquetar nombres para mantener orden (opcional)
                         name: c.name.startsWith('Ciclo ')
                           ? `Ciclo ${i + 1}`
                           : c.name,
                       }));
                     });
                   }}
+                  className="w-full sm:flex-1 h-10"
                 >
                   <Trash2 className="mr-2 h-4 w-4" /> Eliminar ciclo
                 </Button>
               </div>
-              {/* Renombrar ciclo activo */}
               <div className="space-y-2">
-                <Label htmlFor="cycle-name">Nombre del ciclo activo</Label>
+                <Label htmlFor="cycle-name" className="text-sm sm:text-base">Nombre del ciclo activo</Label>
                 <Input
                   id="cycle-name"
                   value={cycles[activeCycle]?.name ?? ''}
@@ -304,6 +303,7 @@ export default function NewStudy() {
                   }}
                   maxLength={40}
                   placeholder={`Ciclo ${activeCycle + 1}`}
+                  className="h-10 text-base"
                 />
               </div>
             </CardContent>
@@ -311,31 +311,33 @@ export default function NewStudy() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Información del Estudio</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Información del Estudio</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="processName">Nombre del Proceso *</Label>
+                <Label htmlFor="processName" className="text-sm sm:text-base">Nombre del Proceso *</Label>
                 <Input
                   id="processName"
                   value={formData.processName}
                   onChange={(e) => setFormData({ ...formData, processName: e.target.value })}
                   placeholder="Ej: Ensamblaje de componente A"
+                  className="h-10 text-base"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Descripción</Label>
+                <Label htmlFor="description" className="text-sm sm:text-base">Descripción</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Describe el proceso..."
                   rows={3}
+                  className="text-base resize-none"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="rating">Calificación (%)</Label>
+                  <Label htmlFor="rating" className="text-sm sm:text-base">Calificación (%)</Label>
                   <Input
                     id="rating"
                     type="number"
@@ -343,10 +345,11 @@ export default function NewStudy() {
                     max="120"
                     value={formData.performanceRating}
                     onChange={(e) => setFormData({ ...formData, performanceRating: parseFloat(e.target.value) })}
+                    className="h-10 text-base"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="supplement">Suplemento (%)</Label>
+                  <Label htmlFor="supplement" className="text-sm sm:text-base">Suplemento (%)</Label>
                   <Input
                     id="supplement"
                     type="number"
@@ -354,6 +357,7 @@ export default function NewStudy() {
                     max="50"
                     value={formData.supplementPercentage}
                     onChange={(e) => setFormData({ ...formData, supplementPercentage: parseFloat(e.target.value) })}
+                    className="h-10 text-base"
                   />
                 </div>
               </div>
@@ -362,72 +366,72 @@ export default function NewStudy() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Clock className="h-5 w-5" />
                 Cronómetro — {cycles[activeCycle]?.name ?? `Ciclo ${activeCycle + 1}`}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Display del cronómetro y botones en horizontal */}
-              <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
+            <CardContent className="space-y-4 sm:space-y-6">
+              {/* Display del cronómetro y botones */}
+              <div className="flex flex-col items-center gap-4 sm:gap-6">
                 {/* Display del tiempo */}
-                <div className="flex-shrink-0">
-                  <div className="text-4xl lg:text-5xl font-mono font-bold text-primary tracking-normal leading-tight">
+                <div className="w-full">
+                  <div className="text-4xl sm:text-5xl lg:text-6xl font-mono font-bold text-primary tracking-normal leading-tight text-center">
                     {formatTime(time)}
                   </div>
                 </div>
                 
-                {/* Botones de control en vertical (compactos) */}
-                <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-[200px]">
+                {/* Botones de control en grid para mobile */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full sm:max-w-md">
                   <Button
                     onClick={handleStart}
-                    size="sm"
-                    className={`w-full ${isRunning ? 'bg-green-600 hover:bg-green-700' : 'bg-primary'}`}
+                    size="lg"
+                    className={`w-full h-12 ${isRunning ? 'bg-green-600 hover:bg-green-700' : 'bg-primary'}`}
                   >
                     {isRunning ? (
                       <>
-                        <Save className="mr-2 h-3 w-3" /> Registrar
+                        <Save className="mr-2 h-4 w-4" /> Registrar
                       </>
                     ) : (
                       <>
-                        <Play className="mr-2 h-3 w-3" /> Iniciar
+                        <Play className="mr-2 h-4 w-4" /> Iniciar
                       </>
                     )}
                   </Button>
                   <Button 
                     onClick={handlePause} 
                     variant="outline" 
-                    size="sm"
-                    className="w-full"
+                    size="lg"
+                    className="w-full h-12"
                     disabled={!isRunning}
                   >
-                    <Pause className="mr-2 h-3 w-3" /> Pausar
+                    <Pause className="mr-2 h-4 w-4" /> Pausar
                   </Button>
                   <Button 
                     onClick={handleReset} 
                     variant="outline" 
-                    size="sm"
-                    className="w-full"
+                    size="lg"
+                    className="w-full h-12"
                   >
-                    <RotateCcw className="mr-2 h-3 w-3" /> Reiniciar
+                    <RotateCcw className="mr-2 h-4 w-4" /> Reiniciar
                   </Button>
                 </div>
               </div>
 
               {/* Separador visual */}
-              <div className="border-t pt-6">
-                <h3 className="font-semibold text-lg mb-4">
+              <div className="border-t pt-4 sm:pt-6">
+                <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">
                   Tiempos Observados — {cycles[activeCycle]?.name} 
-                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  <span className="ml-2 text-xs sm:text-sm font-normal text-muted-foreground">
                     ({currentObservations.length} observaciones)
                   </span>
                 </h3>
                 
                 {/* Formulario de entrada manual mejorado */}
-                <div className="bg-muted/50 rounded-lg p-4 mb-4">
+                <div className="bg-muted/50 rounded-lg p-3 sm:p-4 mb-4">
                   <Label className="text-sm font-medium mb-3 block">Agregar tiempo manualmente</Label>
-                  <div className="flex flex-wrap items-end gap-3">
-                    <div className="flex-1 min-w-[80px]">
+                  <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+                    <div className="flex-1 min-w-[70px] sm:min-w-[80px]">
                       <Label htmlFor="mm" className="text-xs text-muted-foreground mb-1 block">Minutos</Label>
                       <Input
                         id="mm"
@@ -436,11 +440,11 @@ export default function NewStudy() {
                         value={manualMin}
                         onChange={(e) => setManualMin(e.target.value)}
                         placeholder="00"
-                        className="text-center font-mono"
+                        className="text-center font-mono h-11 text-base"
                       />
                     </div>
-                    <span className="text-2xl font-bold text-muted-foreground pb-2">:</span>
-                    <div className="flex-1 min-w-[80px]">
+                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground pb-2">:</span>
+                    <div className="flex-1 min-w-[70px] sm:min-w-[80px]">
                       <Label htmlFor="ss" className="text-xs text-muted-foreground mb-1 block">Segundos</Label>
                       <Input
                         id="ss"
@@ -450,11 +454,11 @@ export default function NewStudy() {
                         value={manualSec}
                         onChange={(e) => setManualSec(e.target.value)}
                         placeholder="00"
-                        className="text-center font-mono"
+                        className="text-center font-mono h-11 text-base"
                       />
                     </div>
-                    <span className="text-2xl font-bold text-muted-foreground pb-2">.</span>
-                    <div className="flex-1 min-w-[80px]">
+                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground pb-2">.</span>
+                    <div className="flex-1 min-w-[70px] sm:min-w-[80px]">
                       <Label htmlFor="cc" className="text-xs text-muted-foreground mb-1 block">Centésimas</Label>
                       <Input
                         id="cc"
@@ -464,14 +468,14 @@ export default function NewStudy() {
                         value={manualCs}
                         onChange={(e) => setManualCs(e.target.value)}
                         placeholder="00"
-                        className="text-center font-mono"
+                        className="text-center font-mono h-11 text-base"
                       />
                     </div>
                     <Button 
                       type="button" 
                       onClick={handleAddManualTime}
                       size="lg"
-                      className="flex-shrink-0"
+                      className="w-full sm:w-auto sm:flex-shrink-0 h-11"
                     >
                       <Plus className="mr-2 h-5 w-5" /> Agregar
                     </Button>
@@ -479,10 +483,10 @@ export default function NewStudy() {
                 </div>
 
                 {/* Lista de observaciones mejorada */}
-                <div className="bg-muted/30 rounded-lg p-4 max-h-64 overflow-y-auto border">
+                <div className="bg-muted/30 rounded-lg p-3 sm:p-4 max-h-64 overflow-y-auto border">
                   {currentObservations.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Clock className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                    <div className="text-center py-6 sm:py-8">
+                      <Clock className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 text-muted-foreground/50" />
                       <p className="text-muted-foreground text-sm">No hay observaciones registradas</p>
                       <p className="text-muted-foreground text-xs mt-1">Usa el cronómetro o agrega tiempos manualmente</p>
                     </div>
@@ -493,16 +497,16 @@ export default function NewStudy() {
                           key={i} 
                           className="flex items-center justify-between p-3 bg-background rounded-md hover:bg-accent/5 transition-colors"
                         >
-                          <div className="flex items-center gap-4">
-                            <span className="text-xs font-medium text-muted-foreground w-16">
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            <span className="text-xs font-medium text-muted-foreground w-14 sm:w-16">
                               Obs #{i + 1}
                             </span>
-                            <span className="font-mono text-lg font-semibold">{formatTime(t)}</span>
+                            <span className="font-mono text-base sm:text-lg font-semibold">{formatTime(t)}</span>
                           </div>
                           <Button 
                             size="sm" 
                             variant="ghost" 
-                            className="h-8 w-8 p-0 hover:bg-destructive/10" 
+                            className="h-9 w-9 p-0 hover:bg-destructive/10" 
                             onClick={() => handleRemoveObserved(i)}
                             title="Eliminar observación"
                           >
@@ -520,28 +524,28 @@ export default function NewStudy() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Resultados del Análisis</CardTitle>
-            <CardDescription>Cálculos basados en el ciclo activo y resumen por ciclo</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Resultados del Análisis</CardTitle>
+            <CardDescription className="text-sm sm:text-base">Cálculos basados en el ciclo activo y resumen por ciclo</CardDescription>
           </CardHeader>
           <CardContent>
             {/* Tiempo estándar general de todos los ciclos */}
-            <div className="mb-6 p-6 rounded-lg border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
-              <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <div className="mb-4 sm:mb-6 p-4 sm:p-6 rounded-lg border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+              <h4 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
                 Tiempo Estándar General (Todos los Ciclos)
               </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-background/80 rounded-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="text-center p-3 sm:p-4 bg-background/80 rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Tiempo Promedio</p>
-                  <p className="text-xl font-bold">{generalTimes.average.toFixed(2)}s</p>
+                  <p className="text-lg sm:text-xl font-bold">{generalTimes.average.toFixed(2)}s</p>
                 </div>
-                <div className="text-center p-4 bg-background/80 rounded-lg">
+                <div className="text-center p-3 sm:p-4 bg-background/80 rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Tiempo Normal</p>
-                  <p className="text-xl font-bold">{generalTimes.normal.toFixed(2)}s</p>
+                  <p className="text-lg sm:text-xl font-bold">{generalTimes.normal.toFixed(2)}s</p>
                 </div>
-                <div className="text-center p-4 bg-primary/20 rounded-lg">
+                <div className="text-center p-3 sm:p-4 bg-primary/20 rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Tiempo Estándar</p>
-                  <p className="text-2xl font-bold text-primary">{generalTimes.standard.toFixed(2)}s</p>
+                  <p className="text-xl sm:text-2xl font-bold text-primary">{generalTimes.standard.toFixed(2)}s</p>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-3 text-center">
@@ -550,43 +554,43 @@ export default function NewStudy() {
             </div>
 
             {/* Resultados del ciclo activo */}
-            <div className="mb-6">
-              <h4 className="font-semibold mb-3">Resultados del Ciclo Activo ({cycles[activeCycle]?.name})</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Tiempo Promedio</p>
-                  <p className="text-2xl font-bold">{times.average.toFixed(2)}s</p>
+            <div className="mb-4 sm:mb-6">
+              <h4 className="font-semibold text-sm sm:text-base mb-3">Resultados del Ciclo Activo ({cycles[activeCycle]?.name})</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                <div className="text-center p-3 sm:p-4 bg-muted rounded-lg">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Tiempo Promedio</p>
+                  <p className="text-xl sm:text-2xl font-bold">{times.average.toFixed(2)}s</p>
                 </div>
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Tiempo Normal</p>
-                  <p className="text-2xl font-bold">{times.normal.toFixed(2)}s</p>
+                <div className="text-center p-3 sm:p-4 bg-muted rounded-lg">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Tiempo Normal</p>
+                  <p className="text-xl sm:text-2xl font-bold">{times.normal.toFixed(2)}s</p>
                 </div>
-                <div className="text-center p-4 bg-primary/10 rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Tiempo Estándar</p>
-                  <p className="text-2xl font-bold text-primary">{times.standard.toFixed(2)}s</p>
+                <div className="text-center p-3 sm:p-4 bg-primary/10 rounded-lg">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Tiempo Estándar</p>
+                  <p className="text-xl sm:text-2xl font-bold text-primary">{times.standard.toFixed(2)}s</p>
                 </div>
               </div>
             </div>
 
             {/* Resumen por ciclo */}
-            <div className="mt-6">
-              <h4 className="font-semibold mb-2">Resumen por ciclo</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="mt-4 sm:mt-6">
+              <h4 className="font-semibold text-sm sm:text-base mb-2">Resumen por ciclo</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {cycles.map((c, idx) => {
                   const t = calculateTimes(c.observations);
                   return (
-                    <div key={idx} className="p-4 rounded-lg border bg-card">
-                      <p className="font-medium mb-1">{c.name}</p>
+                    <div key={idx} className="p-3 sm:p-4 rounded-lg border bg-card">
+                      <p className="font-medium mb-1 text-sm sm:text-base">{c.name}</p>
                       <p className="text-xs text-muted-foreground mb-2">Observaciones: {c.observations.length}</p>
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center justify-between text-xs sm:text-sm">
                         <span>Promedio</span>
                         <span className="font-mono">{t.average.toFixed(2)}s</span>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center justify-between text-xs sm:text-sm">
                         <span>Normal</span>
                         <span className="font-mono">{t.normal.toFixed(2)}s</span>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center justify-between text-xs sm:text-sm">
                         <span>Estándar</span>
                         <span className="font-mono text-primary">{t.standard.toFixed(2)}s</span>
                       </div>
@@ -596,8 +600,13 @@ export default function NewStudy() {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
-              <Button onClick={handleSave} size="lg" disabled={currentObservations.length === 0 && cycles.every(c => c.observations.length === 0)}>
+            <div className="mt-4 sm:mt-6 flex justify-end">
+              <Button 
+                onClick={handleSave} 
+                size="lg" 
+                disabled={currentObservations.length === 0 && cycles.every(c => c.observations.length === 0)}
+                className="w-full sm:w-auto h-12"
+              >
                 <Save className="mr-2 h-5 w-5" />
                 Guardar Estudio
               </Button>

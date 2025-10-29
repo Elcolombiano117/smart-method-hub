@@ -10,8 +10,8 @@ export const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <Sidebar />
-      <main className="pt-16 pl-64">
-        <div className="p-8">
+      <main className="pt-16 lg:pl-64">
+        <div className="p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

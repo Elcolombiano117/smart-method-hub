@@ -49,13 +49,13 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-6 sm:space-y-8 animate-fade-in">
         <div>
-          <h1 className="text-4xl font-bold text-foreground mb-2">Panel de Control</h1>
-          <p className="text-muted-foreground">Bienvenido a SmartMethods</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">Panel de Control</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Bienvenido a SmartMethods</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {stats.map((stat) => (
             <Card key={stat.title} className="hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -65,7 +65,7 @@ export default function Dashboard() {
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{stat.value}</div>
+                <div className="text-2xl sm:text-3xl font-bold">{stat.value}</div>
               </CardContent>
             </Card>
           ))}
@@ -73,32 +73,32 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Comenzar Nuevo Estudio</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Comenzar Nuevo Estudio</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
               Crea un nuevo estudio de tiempos y métodos para analizar tus procesos
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate('/nuevo-estudio')} size="lg">
+            <Button onClick={() => navigate('/nuevo-estudio')} size="lg" className="w-full sm:w-auto h-12 sm:h-auto">
               <Clock className="mr-2 h-5 w-5" />
               Iniciar Estudio
             </Button>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <FileText className="h-5 w-5" />
                 Mis Estudios
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-sm sm:text-base text-muted-foreground mb-4">
                 Consulta y gestiona todos tus estudios anteriores
               </p>
-              <Button variant="outline" onClick={() => navigate('/mis-estudios')}>
+              <Button variant="outline" onClick={() => navigate('/mis-estudios')} className="w-full sm:w-auto h-11 sm:h-auto">
                 Ver Estudios
               </Button>
             </CardContent>
@@ -106,16 +106,16 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <BarChart3 className="h-5 w-5" />
                 Análisis
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-sm sm:text-base text-muted-foreground mb-4">
                 Visualiza estadísticas y tendencias de tus estudios
               </p>
-              <Button variant="outline" onClick={() => navigate('/analisis')}>
+              <Button variant="outline" onClick={() => navigate('/analisis')} className="w-full sm:w-auto h-11 sm:h-auto">
                 Ver Análisis
               </Button>
             </CardContent>

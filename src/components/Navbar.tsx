@@ -105,24 +105,24 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b border-border flex items-center justify-between px-6 shadow-sm">
-      <div className="flex items-center gap-3">
+    <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b border-border flex items-center justify-between px-4 sm:px-6 shadow-sm">
+      <div className="flex items-center gap-2 sm:gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-white font-bold text-xl">SM</span>
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-white font-bold text-lg sm:text-xl">SM</span>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-primary">SmartMethods</h1>
+          <div className="hidden sm:block">
+            <h1 className="text-lg sm:text-xl font-bold text-primary">SmartMethods</h1>
             <p className="text-xs text-muted-foreground">Ingeniería Industrial</p>
           </div>
         </div>
       </div>
 
       {user && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative" aria-label="Notificaciones">
+              <Button variant="ghost" size="icon" className="relative h-10 w-10" aria-label="Notificaciones">
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 ? (
                   <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-accent text-white text-[10px] leading-4 text-center">
@@ -133,7 +133,7 @@ export const Navbar = () => {
                 ) : null}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 p-0">
+            <DropdownMenuContent align="end" className="w-[90vw] sm:w-80 p-0">
               <div className="p-3 border-b flex items-center justify-between gap-2">
                 <div>
                   <p className="text-sm font-semibold">Notificaciones</p>
@@ -185,7 +185,7 @@ export const Navbar = () => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
+              <Button variant="ghost" className="flex items-center gap-2 h-10 px-2 sm:px-3">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={profile?.avatar_url} />
                   <AvatarFallback>{getInitials()}</AvatarFallback>

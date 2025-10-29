@@ -103,24 +103,24 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-white font-bold text-2xl">SM</span>
+        <CardHeader className="text-center space-y-2 sm:space-y-4">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-4 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-white font-bold text-xl sm:text-2xl">SM</span>
           </div>
-          <CardTitle className="text-2xl">SmartMethods</CardTitle>
-          <CardDescription>Ingeniería Industrial</CardDescription>
+          <CardTitle className="text-xl sm:text-2xl">SmartMethods</CardTitle>
+          <CardDescription className="text-sm sm:text-base">Ingeniería Industrial</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-              <TabsTrigger value="signup">Registrarse</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 h-11">
+              <TabsTrigger value="login" className="text-sm sm:text-base">Iniciar Sesión</TabsTrigger>
+              <TabsTrigger value="signup" className="text-sm sm:text-base">Registrarse</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Correo Electrónico</Label>
+                  <Label htmlFor="login-email" className="text-sm sm:text-base">Correo Electrónico</Label>
                   <Input
                     id="login-email"
                     type="email"
@@ -130,12 +130,13 @@ export default function Auth() {
                       setLoginData({ ...loginData, email: e.target.value });
                       setErrors({ ...errors, email: '' });
                     }}
+                    className="h-11 text-base"
                     required
                   />
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Contraseña</Label>
+                  <Label htmlFor="login-password" className="text-sm sm:text-base">Contraseña</Label>
                   <Input
                     id="login-password"
                     type="password"
@@ -144,11 +145,12 @@ export default function Auth() {
                       setLoginData({ ...loginData, password: e.target.value });
                       setErrors({ ...errors, password: '' });
                     }}
+                    className="h-11 text-base"
                     required
                   />
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full h-11 text-base" disabled={loading}>
                   {loading ? 'Ingresando...' : 'Iniciar Sesión'}
                 </Button>
               </form>
@@ -157,7 +159,7 @@ export default function Auth() {
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Nombre Completo</Label>
+                  <Label htmlFor="signup-name" className="text-sm sm:text-base">Nombre Completo</Label>
                   <Input
                     id="signup-name"
                     type="text"
@@ -167,12 +169,13 @@ export default function Auth() {
                       setSignupData({ ...signupData, fullName: e.target.value });
                       setErrors({ ...errors, fullName: '' });
                     }}
+                    className="h-11 text-base"
                     required
                   />
                   {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Correo Electrónico</Label>
+                  <Label htmlFor="signup-email" className="text-sm sm:text-base">Correo Electrónico</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -182,12 +185,13 @@ export default function Auth() {
                       setSignupData({ ...signupData, email: e.target.value });
                       setErrors({ ...errors, email: '' });
                     }}
+                    className="h-11 text-base"
                     required
                   />
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Contraseña</Label>
+                  <Label htmlFor="signup-password" className="text-sm sm:text-base">Contraseña</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -196,6 +200,7 @@ export default function Auth() {
                       setSignupData({ ...signupData, password: e.target.value });
                       setErrors({ ...errors, password: '' });
                     }}
+                    className="h-11 text-base"
                     required
                   />
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
@@ -204,7 +209,7 @@ export default function Auth() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-confirm">Confirmar Contraseña</Label>
+                  <Label htmlFor="signup-confirm" className="text-sm sm:text-base">Confirmar Contraseña</Label>
                   <Input
                     id="signup-confirm"
                     type="password"
@@ -213,11 +218,12 @@ export default function Auth() {
                       setSignupData({ ...signupData, confirmPassword: e.target.value });
                       setErrors({ ...errors, confirmPassword: '' });
                     }}
+                    className="h-11 text-base"
                     required
                   />
                   {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full h-11 text-base" disabled={loading}>
                   {loading ? 'Creando cuenta...' : 'Registrarse'}
                 </Button>
               </form>
