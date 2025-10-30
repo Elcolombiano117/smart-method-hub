@@ -11,7 +11,7 @@ export const Layout = ({ children }: LayoutProps) => {
       <Navbar />
       <Sidebar />
       <main className="pt-16 lg:pl-64">
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           {children}
         </div>
       </main>
