@@ -24,7 +24,7 @@ const menuItems = [
 ];
 
 const SidebarContent = ({ onItemClick }: { onItemClick?: () => void }) => (
-  <div className="p-4 space-y-1">
+  <div className="p-4 space-y-2">
     {menuItems.map((item) => (
       <NavLink
         key={item.path}
@@ -32,21 +32,21 @@ const SidebarContent = ({ onItemClick }: { onItemClick?: () => void }) => (
         onClick={onItemClick}
         className={({ isActive }) =>
           cn(
-            "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
+            "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px] font-medium",
             isActive
-              ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-md"
-              : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+              ? "bg-white/20 text-white shadow-lg border border-white/30"
+              : "text-white/90 hover:bg-white/15 hover:text-white hover:shadow-md"
           )
         }
       >
         {({ isActive }) => (
           <>
             <item.icon className="h-5 w-5 flex-shrink-0" />
-            <span className="flex-1 font-medium">{item.title}</span>
+            <span className="flex-1">{item.title}</span>
             <ChevronRight 
               className={cn(
                 "h-4 w-4 transition-transform",
-                isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"
               )}
             />
           </>
