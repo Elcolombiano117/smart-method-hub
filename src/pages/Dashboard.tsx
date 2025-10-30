@@ -11,46 +11,67 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { data: studies, isLoading } = useQuery({
+  const { data: studies, isLoading, isError, error } = useQuery({
     queryKey: ['studies-count', user?.id],
+    retry: false,
+    enabled: !!user,
     queryFn: async () => {
       if (!user) return [] as any[];
-      const { data, error } = await supabase
-        .from('studies')
-        .select('id, status, deleted_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as any[];
+      try {
+        const { data, error } = await supabase
+          .from('studies')
+          .select('id, status, deleted_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error as any;
+        return data as any[];
+      } catch (e: any) {
+        // Fallback si aún no existe deleted_at
+        if (typeof e?.message === 'string' && e.message.toLowerCase().includes('deleted_at')) {
+          const { data, error } = await supabase
+            .from('studies')
+            .select('id, status')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+          if (error) throw error as any;
+          return data as any[];
+        }
+        throw e;
+      }
     },
-    enabled: !!user,
   });
 
+  const supportsTrash = Array.isArray(studies) && studies.length > 0
+    ? Object.prototype.hasOwnProperty.call(studies[0], 'deleted_at')
+    : true; // asumir true si vacío
+  const normStatus = (v: any) => String(v ?? '').trim().toLowerCase();
+  const isDeleted = (s: any) => supportsTrash && s.deleted_at != null;
+
+  const totalsActive = (studies || []).filter((s: any) => !isDeleted(s)).length;
+  const inProgressCount = (studies || []).filter((s: any) => normStatus(s.status) === 'in_progress' && !isDeleted(s)).length;
+  const completedCount = (studies || []).filter((s: any) => normStatus(s.status) === 'completed' && !isDeleted(s)).length;
+  const trashCount = supportsTrash ? (studies || []).filter((s: any) => isDeleted(s)).length : 0;
+
   const stats = [
-    {
-      title: "Estudios Totales",
-      value: (studies?.filter((s: any) => s.deleted_at == null).length) || 0,
-      icon: FileText,
-      color: "text-primary",
-    },
-    {
-      title: "En Progreso",
-      value: studies?.filter((s: any) => s.status === 'in_progress' && s.deleted_at == null).length || 0,
-      icon: Clock,
-      color: "text-accent",
-    },
-    {
-      title: "Completados",
-      value: studies?.filter((s: any) => s.status === 'completed' && s.deleted_at == null).length || 0,
-      icon: TrendingUp,
-      color: "text-success",
-    },
+    { title: 'Estudios Totales', value: totalsActive, icon: FileText, color: 'text-primary' },
+    { title: 'En Progreso', value: inProgressCount, icon: Clock, color: 'text-accent' },
+    { title: 'Completados', value: completedCount, icon: TrendingUp, color: 'text-success' },
   ];
-  const trashCount = studies?.filter((s: any) => s.deleted_at != null).length || 0;
 
   return (
     <Layout>
       <div className="space-y-6 sm:space-y-8 animate-fade-in">
+        {isError && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Error al cargar métricas</CardTitle>
+              <CardDescription>Intenta de nuevo más tarde.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-destructive/80">{(error as any)?.message || 'Error desconocido'}</p>
+            </CardContent>
+          </Card>
+        )}
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">Panel de Control</h1>
           <p className="text-sm sm:text-base text-muted-foreground">Bienvenido a SmartMethods</p>
