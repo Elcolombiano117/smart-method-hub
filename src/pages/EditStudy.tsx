@@ -51,6 +51,9 @@ export default function EditStudy() {
   const [bulkTimes, setBulkTimes] = useState<string>("");
   const [editingCycleIndex, setEditingCycleIndex] = useState<number | null>(null);
   const [editingCycleName, setEditingCycleName] = useState<string>("");
+  // Edición inline de observaciones
+  const [editingObs, setEditingObs] = useState<{ cycle: number; index: number } | null>(null);
+  const [editingValue, setEditingValue] = useState<string>("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -113,6 +116,14 @@ export default function EditStudy() {
       }
     }
   }, [study]);
+
+  // Si cambia el ciclo activo, cancelar edición inline si no coincide
+  useEffect(() => {
+    if (editingObs && editingObs.cycle !== activeCycle) {
+      setEditingObs(null);
+      setEditingValue("");
+    }
+  }, [activeCycle]);
 
   const formatTime = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
@@ -195,6 +206,59 @@ export default function EditStudy() {
 
   const handleRemoveObserved = (index: number) => {
     setCycles(prev => prev.map((cycle, idx) => idx === activeCycle ? { ...cycle, observations: cycle.observations.filter((_, i) => i !== index) } : cycle));
+  };
+
+  const parseTimeToMs = (value: string): number | null => {
+    const trimmed = value.trim();
+    const m = trimmed.match(/^(\d+):(\d+)\.(\d+)$/) ||
+              trimmed.match(/^(\d+):(\d+)$/) ||
+              trimmed.match(/^(\d+)\.(\d+)$/) ||
+              trimmed.match(/^(\d+)$/);
+    if (!m) return null;
+    let minutes = 0, seconds = 0, centis = 0;
+    if (m.length === 4 && m[1] !== undefined) { // mm:ss.cc
+      minutes = parseInt(m[1], 10);
+      seconds = parseInt(m[2], 10);
+      centis = parseInt(m[3], 10);
+    } else if (m.length === 3 && m[1] !== undefined && m[2] !== undefined && trimmed.includes(":")) { // mm:ss
+      minutes = parseInt(m[1], 10);
+      seconds = parseInt(m[2], 10);
+    } else if (m.length === 3 && m[1] !== undefined && m[2] !== undefined && trimmed.includes(".")) { // ss.cc
+      seconds = parseInt(m[1], 10);
+      centis = parseInt(m[2], 10);
+    } else if (m.length >= 2 && m[1] !== undefined) { // ss
+      seconds = parseInt(m[1], 10);
+    }
+    if (seconds < 0 || seconds > 59 || centis < 0 || centis > 99 || minutes < 0) return null;
+    return minutes * 60000 + seconds * 1000 + centis * 10;
+  };
+
+  const startEditObservation = (index: number) => {
+    const obs = cycles[activeCycle]?.observations?.[index];
+    if (typeof obs !== 'number') return;
+    setEditingObs({ cycle: activeCycle, index });
+    setEditingValue(formatTime(obs));
+  };
+
+  const saveEditObservation = () => {
+    if (!editingObs) return;
+    const ms = parseTimeToMs(editingValue);
+    if (ms === null) {
+      toast.error("Formato inválido. Usa mm:ss.cc, mm:ss, ss.cc o ss");
+      return;
+    }
+    setCycles(prev => prev.map((c, cIdx) => cIdx !== editingObs.cycle ? c : {
+      ...c,
+      observations: c.observations.map((v, i) => i === editingObs.index ? ms : v)
+    }));
+    setEditingObs(null);
+    setEditingValue("");
+    toast.success("Observación actualizada");
+  };
+
+  const cancelEditObservation = () => {
+    setEditingObs(null);
+    setEditingValue("");
   };
 
   const calcTimes = (obs: number[], rating: number, supplement: number) => {
@@ -490,17 +554,39 @@ export default function EditStudy() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {currentObservations.map((t, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-background rounded-md hover:bg-accent/5 transition-colors">
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <span className="text-xs font-medium text-muted-foreground w-14 sm:w-16">Obs #{i + 1}</span>
-                          <span className="font-mono text-base sm:text-lg font-semibold">{formatTime(t)}</span>
+                    {currentObservations.map((t, i) => {
+                      const isEditing = editingObs && editingObs.cycle === activeCycle && editingObs.index === i;
+                      return (
+                        <div key={i} className="flex items-center justify-between p-3 bg-background rounded-md hover:bg-accent/5 transition-colors">
+                          <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                            <span className="text-xs font-medium text-muted-foreground w-14 sm:w-16 shrink-0">#{i + 1}</span>
+                            {isEditing ? (
+                              <Input
+                                value={editingValue}
+                                onChange={(e) => setEditingValue(e.target.value)}
+                                className="font-mono text-base sm:text-lg h-10"
+                                placeholder="mm:ss.cc"
+                              />
+                            ) : (
+                              <span className="font-mono text-base sm:text-lg font-semibold truncate">{formatTime(t)}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 sm:gap-2 ml-2">
+                            {isEditing ? (
+                              <>
+                                <Button size="sm" className="h-9" onClick={saveEditObservation} title="Guardar"><Check className="h-4 w-4" /></Button>
+                                <Button size="sm" variant="outline" className="h-9" onClick={cancelEditObservation} title="Cancelar"><X className="h-4 w-4" /></Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button size="sm" variant="ghost" className="h-9 w-9 p-0" onClick={() => startEditObservation(i)} title="Editar"><Pencil className="h-4 w-4" /></Button>
+                                <Button size="sm" variant="ghost" className="h-9 w-9 p-0 hover:bg-destructive/10" onClick={() => handleRemoveObserved(i)} title="Eliminar"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <Button size="sm" variant="ghost" className="h-9 w-9 p-0 hover:bg-destructive/10" onClick={() => handleRemoveObserved(i)} title="Eliminar observación">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
