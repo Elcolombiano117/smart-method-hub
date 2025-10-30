@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { useAuth } from "@/hooks/useAuth";
 export default function NewStudy() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  // Clave de borrador por usuario
+  const DRAFT_KEY = useMemo(() => `newStudyDraft:${user?.id ?? 'anon'}`,[user?.id]);
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState(0);
   // Ciclos con múltiples observaciones por ciclo
@@ -26,6 +28,7 @@ export default function NewStudy() {
   const [manualCs, setManualCs] = useState<string>("");
   const [bulkTimes, setBulkTimes] = useState<string>("");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const draftRestoredRef = useRef<boolean>(false);
   // Edición de nombres de ciclo en línea
   const [editingCycleIndex, setEditingCycleIndex] = useState<number | null>(null);
   const [editingCycleName, setEditingCycleName] = useState<string>("");
@@ -56,6 +59,38 @@ export default function NewStudy() {
       }
     };
   }, [isRunning]);
+
+  // Restaurar borrador al entrar
+  useEffect(() => {
+    if (draftRestoredRef.current) return;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.formData) setFormData((prev) => ({...prev, ...parsed.formData}));
+        if (Array.isArray(parsed?.cycles)) setCycles(parsed.cycles);
+        if (typeof parsed?.activeCycle === 'number') setActiveCycle(parsed.activeCycle);
+        toast.success('Borrador cargado');
+      }
+    } catch {}
+    draftRestoredRef.current = true;
+  }, [DRAFT_KEY]);
+
+  // Guardar borrador automáticamente
+  useEffect(() => {
+    if (!draftRestoredRef.current) return;
+    const payload = {
+      formData,
+      cycles,
+      activeCycle,
+      updatedAt: new Date().toISOString(),
+    };
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(payload)); } catch {}
+  }, [formData, cycles, activeCycle, DRAFT_KEY]);
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(DRAFT_KEY); toast.success('Borrador descartado'); } catch {}
+  };
 
   const formatTime = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
@@ -222,6 +257,8 @@ export default function NewStudy() {
       if (error) throw error;
 
       toast.success('Estudio guardado exitosamente');
+      // Limpiar borrador al guardar
+      clearDraft();
       navigate('/mis-estudios');
     } catch (error: any) {
       toast.error(error.message || 'Error al guardar el estudio');
@@ -686,12 +723,20 @@ export default function NewStudy() {
               </div>
             </div>
 
-            <div className="mt-4 sm:mt-6 flex justify-end">
+            <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-2 justify-end">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={clearDraft}
+                className="w-full sm:w-auto h-12 order-2 sm:order-1"
+              >
+                Descartar borrador
+              </Button>
               <Button 
                 onClick={handleSave} 
                 size="lg" 
                 disabled={currentObservations.length === 0 && cycles.every(c => c.observations.length === 0)}
-                className="w-full sm:w-auto h-12"
+                className="w-full sm:w-auto h-12 order-1 sm:order-2"
               >
                 <Save className="mr-2 h-5 w-5" />
                 Guardar Estudio
