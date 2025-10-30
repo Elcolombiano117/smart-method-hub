@@ -34,8 +34,8 @@ const SidebarContent = ({ onItemClick }: { onItemClick?: () => void }) => (
           cn(
             "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px] font-medium",
             isActive
-              ? "bg-white/20 text-white shadow-lg border border-white/30"
-              : "text-white/90 hover:bg-white/15 hover:text-white hover:shadow-md"
+              ? "bg-blue-600 text-white shadow-lg"
+              : "text-blue-900 hover:bg-blue-100 hover:text-blue-700"
           )
         }
       >
@@ -46,7 +46,7 @@ const SidebarContent = ({ onItemClick }: { onItemClick?: () => void }) => (
             <ChevronRight 
               className={cn(
                 "h-4 w-4 transition-transform",
-                isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"
+                isActive ? "opacity-100" : "opacity-50 group-hover:opacity-100"
               )}
             />
           </>
@@ -69,7 +69,7 @@ export const Sidebar = () => {
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[280px] p-0 bg-sidebar-background">
+          <SheetContent side="left" className="w-[280px] p-0 bg-white">
             <div className="pt-6">
               <SidebarContent onItemClick={() => setOpen(false)} />
             </div>
@@ -78,7 +78,7 @@ export const Sidebar = () => {
       </div>
 
       {/* Desktop: Fixed sidebar */}
-      <aside className="hidden lg:block fixed left-0 top-16 bottom-0 w-64 bg-sidebar-background border-r border-sidebar-border overflow-y-auto">
+      <aside className="hidden lg:block fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-gray-200 overflow-y-auto">
         <SidebarContent />
       </aside>
     </>
