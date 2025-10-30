@@ -185,31 +185,34 @@ export default function MyStudies() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => navigate(`/estudio/${study.id}`)}
-                      >
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => navigate(`/estudio/${study.id}`)}
+                    >
                       <Eye className="mr-2 h-4 w-4" />
                       Ver
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      className="flex-1"
+                      className="w-full"
                       onClick={() => navigate(`/estudio/${study.id}/editar`)}
                     >
                       <Pencil className="mr-2 h-4 w-4" />
                       Editar
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="destructive"
                       size="sm"
+                      aria-label="Eliminar estudio"
+                      className="w-full col-span-2 md:col-span-1"
                       onClick={() => deleteMutation.mutate(study.id)}
                     >
                       <Trash2 className="h-4 w-4" />
+                      <span className="ml-2 hidden md:inline">Eliminar</span>
                     </Button>
                   </div>
                 </CardContent>
