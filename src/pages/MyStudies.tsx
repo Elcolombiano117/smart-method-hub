@@ -155,7 +155,7 @@ export default function MyStudies() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {studies.map((study) => (
               <Card key={study.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
@@ -185,7 +185,7 @@ export default function MyStudies() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -208,11 +208,11 @@ export default function MyStudies() {
                       variant="destructive"
                       size="sm"
                       aria-label="Eliminar estudio"
-                      className="w-full col-span-2 md:col-span-1"
+                      className="w-full"
                       onClick={() => deleteMutation.mutate(study.id)}
                     >
                       <Trash2 className="h-4 w-4" />
-                      <span className="ml-2 hidden md:inline">Eliminar</span>
+                      <span className="ml-2">Eliminar</span>
                     </Button>
                   </div>
                 </CardContent>
