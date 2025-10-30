@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, Calendar, TrendingUp } from "lucide-react";
+import { ArrowLeft, Clock, Calendar, TrendingUp, Pencil } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,12 +87,17 @@ export default function StudyDetail() {
           </Button>
         </div>
 
-        <div className="flex justify-between items-start">
-          <div>
+        <div className="flex justify-between items-start gap-4 flex-col sm:flex-row">
+          <div className="flex-1">
             <h1 className="text-4xl font-bold mb-2">{study.process_name}</h1>
             <p className="text-muted-foreground">{study.description || 'Sin descripción'}</p>
           </div>
-          {getStatusBadge(study.status)}
+          <div className="flex items-center gap-2">
+            {getStatusBadge(study.status)}
+            <Button variant="outline" size="sm" onClick={() => navigate(`/estudio/${study.id}/editar`)}>
+              <Pencil className="mr-2 h-4 w-4" /> Editar
+            </Button>
+          </div>
         </div>
 
         {/* Información General */}
