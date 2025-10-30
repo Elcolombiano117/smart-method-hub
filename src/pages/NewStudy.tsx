@@ -16,6 +16,7 @@ export default function NewStudy() {
   const { user } = useAuth();
   // Clave de borrador por usuario
   const DRAFT_KEY = useMemo(() => `newStudyDraft:${user?.id ?? 'anon'}`,[user?.id]);
+  const DRAFT_ID_KEY = useMemo(() => `${DRAFT_KEY}:id`, [DRAFT_KEY]);
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState(0);
   // Ciclos con múltiples observaciones por ciclo
@@ -29,6 +30,7 @@ export default function NewStudy() {
   const [bulkTimes, setBulkTimes] = useState<string>("");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const draftRestoredRef = useRef<boolean>(false);
+  const [draftStudyId, setDraftStudyId] = useState<string | null>(null);
   // Edición de nombres de ciclo en línea
   const [editingCycleIndex, setEditingCycleIndex] = useState<number | null>(null);
   const [editingCycleName, setEditingCycleName] = useState<string>("");
@@ -65,6 +67,8 @@ export default function NewStudy() {
     if (draftRestoredRef.current) return;
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
+      const savedId = localStorage.getItem(DRAFT_ID_KEY);
+      if (savedId) setDraftStudyId(savedId);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed?.formData) setFormData((prev) => ({...prev, ...parsed.formData}));
@@ -74,7 +78,7 @@ export default function NewStudy() {
       }
     } catch {}
     draftRestoredRef.current = true;
-  }, [DRAFT_KEY]);
+  }, [DRAFT_KEY, DRAFT_ID_KEY]);
 
   // Guardar borrador automáticamente
   useEffect(() => {
@@ -89,7 +93,55 @@ export default function NewStudy() {
   }, [formData, cycles, activeCycle, DRAFT_KEY]);
 
   const clearDraft = () => {
-    try { localStorage.removeItem(DRAFT_KEY); toast.success('Borrador descartado'); } catch {}
+    try { 
+      localStorage.removeItem(DRAFT_KEY); 
+      localStorage.removeItem(DRAFT_ID_KEY);
+      setDraftStudyId(null);
+      toast.success('Borrador descartado'); 
+    } catch {}
+  };
+
+  const handleSaveDraft = async () => {
+    if (!user) {
+      toast.error('Necesitas iniciar sesión');
+      return;
+    }
+
+    const generalTimes = calculateGeneralTimes();
+    const name = formData.processName.trim() || `Borrador ${new Date().toLocaleString()}`;
+
+    const payload = {
+      user_id: user.id,
+      process_name: name,
+      description: formData.description || null,
+      cycles_count: cycles.length,
+      performance_rating: formData.performanceRating,
+      supplement_percentage: formData.supplementPercentage,
+      observed_times: { cycles: cycles.map(c => ({ name: c.name, observations: c.observations })) },
+      average_time: generalTimes.average,
+      normal_time: generalTimes.normal,
+      standard_time: generalTimes.standard,
+      status: 'draft' as const,
+      updated_at: new Date().toISOString(),
+    };
+
+    try {
+      if (draftStudyId) {
+        const { error } = await supabase.from('studies').update(payload).eq('id', draftStudyId);
+        if (error) throw error;
+        toast.success('Borrador actualizado en la nube');
+      } else {
+        const { data, error } = await supabase.from('studies').insert(payload).select('id').single();
+        if (error) throw error;
+        if (data?.id) {
+          setDraftStudyId(data.id);
+          try { localStorage.setItem(DRAFT_ID_KEY, data.id); } catch {}
+        }
+        toast.success('Borrador guardado en la nube');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'No se pudo guardar el borrador');
+    }
   };
 
   const formatTime = (ms: number) => {
@@ -236,25 +288,28 @@ export default function NewStudy() {
     const generalTimes = calculateGeneralTimes();
     
     try {
-      const { error } = await supabase.from('studies').insert({
+      const finalPayload = {
         user_id: user.id,
         process_name: formData.processName,
-        description: formData.description,
+        description: formData.description || null,
         cycles_count: cycles.length,
         performance_rating: formData.performanceRating,
         supplement_percentage: formData.supplementPercentage,
-        // Guardamos estructura completa de ciclos en JSON
-        observed_times: {
-          cycles: cycles.map(c => ({ name: c.name, observations: c.observations }))
-        },
-        // Guardar métricas generales basadas en todas las observaciones
+        observed_times: { cycles: cycles.map(c => ({ name: c.name, observations: c.observations })) },
         average_time: generalTimes.average,
         normal_time: generalTimes.normal,
         standard_time: generalTimes.standard,
-        status: 'completed',
-      });
+        status: 'completed' as const,
+        updated_at: new Date().toISOString(),
+      };
 
-      if (error) throw error;
+      if (draftStudyId) {
+        const { error } = await supabase.from('studies').update(finalPayload).eq('id', draftStudyId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('studies').insert(finalPayload);
+        if (error) throw error;
+      }
 
       toast.success('Estudio guardado exitosamente');
       // Limpiar borrador al guardar
@@ -724,11 +779,19 @@ export default function NewStudy() {
             </div>
 
             <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-2 justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleSaveDraft}
+                className="w-full sm:w-auto h-12 order-3 sm:order-1"
+              >
+                Guardar como borrador
+              </Button>
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={clearDraft}
-                className="w-full sm:w-auto h-12 order-2 sm:order-1"
+                className="w-full sm:w-auto h-12 order-2 sm:order-2"
               >
                 Descartar borrador
               </Button>
@@ -736,7 +799,7 @@ export default function NewStudy() {
                 onClick={handleSave} 
                 size="lg" 
                 disabled={currentObservations.length === 0 && cycles.every(c => c.observations.length === 0)}
-                className="w-full sm:w-auto h-12 order-1 sm:order-2"
+                className="w-full sm:w-auto h-12 order-1 sm:order-3"
               >
                 <Save className="mr-2 h-5 w-5" />
                 Guardar Estudio
