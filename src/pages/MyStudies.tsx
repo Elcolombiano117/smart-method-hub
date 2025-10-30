@@ -49,18 +49,37 @@ export default function MyStudies() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('studies')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
+      // Intento 1: Borrado lógico (papelera)
+      try {
+        const { error } = await supabase
+          .from('studies')
+          .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .eq('user_id', user?.id || '');
+        if (error) throw error as any;
+        return { mode: 'soft' as const };
+      } catch (e: any) {
+        // Si la columna no existe o falla por esquema, hacemos hard delete como fallback
+        const msg = String(e?.message || '').toLowerCase();
+        if (msg.includes('deleted_at') || msg.includes('column') || msg.includes('no existe')) {
+          const { error: delErr } = await supabase
+            .from('studies')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user?.id || '');
+          if (delErr) throw delErr as any;
+          return { mode: 'hard' as const };
+        }
+        throw e;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['studies'] });
-      toast.success('Estudio movido a la papelera');
+      queryClient.invalidateQueries({ queryKey: ['trash-studies'] });
+      toast.success(result.mode === 'soft' ? 'Estudio movido a la papelera' : 'Estudio eliminado definitivamente');
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Error al eliminar');
+      toast.error(error?.message || 'Error al eliminar');
     },
   });
 
