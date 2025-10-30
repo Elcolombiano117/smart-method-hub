@@ -1,7 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, FileText, BarChart3, TrendingUp, Trash2 } from "lucide-react";
+import { Clock, FileText, BarChart3, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +50,7 @@ export default function Dashboard() {
   const totalsActive = (studies || []).filter((s: any) => !isDeleted(s)).length;
   const inProgressCount = (studies || []).filter((s: any) => normStatus(s.status) === 'in_progress' && !isDeleted(s)).length;
   const completedCount = (studies || []).filter((s: any) => normStatus(s.status) === 'completed' && !isDeleted(s)).length;
-  const trashCount = supportsTrash ? (studies || []).filter((s: any) => isDeleted(s)).length : 0;
+  // Se removió la tarjeta de Papelera del dashboard; mantenemos lógica de deleted_at para métricas activas
 
   const stats = [
     { title: 'Estudios Totales', value: totalsActive, icon: FileText, color: 'text-primary' },
@@ -129,16 +129,16 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Trash2 className="h-5 w-5" />
-                Papelera
+                <BarChart3 className="h-5 w-5" />
+                Análisis
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm sm:text-base text-muted-foreground mb-4">
-                Estudios eliminados recientemente. Actualmente en papelera: {trashCount}
+                Explora análisis y visualizaciones de tus estudios
               </p>
-              <Button variant="outline" onClick={() => navigate('/papelera')} className="w-full sm:w-auto h-11 sm:h-auto">
-                Ver Papelera
+              <Button variant="outline" onClick={() => navigate('/analisis')} className="w-full sm:w-auto h-11 sm:h-auto">
+                Ir a Análisis
               </Button>
             </CardContent>
           </Card>

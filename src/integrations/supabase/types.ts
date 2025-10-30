@@ -54,6 +54,7 @@ export type Database = {
           created_at: string | null
           cycles_count: number | null
           description: string | null
+          deleted_at: string | null
           id: string
           normal_time: number | null
           observed_times: Json | null
@@ -72,6 +73,7 @@ export type Database = {
           created_at?: string | null
           cycles_count?: number | null
           description?: string | null
+          deleted_at?: string | null
           id?: string
           normal_time?: number | null
           observed_times?: Json | null
@@ -90,6 +92,7 @@ export type Database = {
           created_at?: string | null
           cycles_count?: number | null
           description?: string | null
+          deleted_at?: string | null
           id?: string
           normal_time?: number | null
           observed_times?: Json | null
