@@ -160,7 +160,7 @@ export default function MyStudies() {
               <Card key={study.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start mb-2">
-                    <CardTitle className="text-lg">{study.process_name}</CardTitle>
+                    <CardTitle className="text-lg break-words">{study.process_name}</CardTitle>
                     {getStatusBadge(study.status)}
                   </div>
                   <CardDescription className="line-clamp-2">

@@ -89,7 +89,7 @@ export default function StudyDetail() {
 
         <div className="flex justify-between items-start gap-4 flex-col sm:flex-row">
           <div className="flex-1">
-            <h1 className="text-4xl font-bold mb-2">{study.process_name}</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2 break-words">{study.process_name}</h1>
             <p className="text-muted-foreground">{study.description || 'Sin descripción'}</p>
           </div>
           <div className="flex items-center gap-2">
