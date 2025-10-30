@@ -2,29 +2,48 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Trash2, Eye, Clock, Pencil, RotateCcw } from "lucide-react";
+import { FileText, Trash2, Eye, Clock, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function MyStudies() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  const { data: studies, isLoading } = useQuery({
-    queryKey: ['studies'],
+  const { data: studies, isLoading, isError, error } = useQuery({
+    queryKey: ['studies', user?.id],
+    retry: false,
+    enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('studies')
-        .select('*')
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
+      if (!user) return [] as any[];
+      try {
+        const { data, error } = await supabase
+          .from('studies')
+          .select('*')
+          .eq('user_id', user.id)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false });
+        if (error) throw error as any;
+        return data as any[];
+      } catch (e: any) {
+        // Si la columna deleted_at no existe, reintentar sin filtro
+        if (typeof e?.message === 'string' && e.message.toLowerCase().includes('deleted_at')) {
+          const { data, error } = await supabase
+            .from('studies')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+          if (error) throw error as any;
+          return data as any[];
+        }
+        throw e;
+      }
     },
   });
 
@@ -61,6 +80,31 @@ export default function MyStudies() {
       <Layout>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Layout>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Error al cargar estudios</CardTitle>
+              <CardDescription>Intenta de nuevo más tarde.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-destructive/80 mb-3">{(error as any)?.message || 'Error desconocido'}</p>
+              <div className="text-sm text-muted-foreground">
+                Si ves un error relacionado con "deleted_at", aplica la migración y recarga:
+                <ul className="list-disc ml-5 mt-2">
+                  <li>Aplica el archivo de migración: <code>supabase/migrations/20251029000100_add_deleted_at_to_studies.sql</code></li>
+                  <li>Luego recarga esta página</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </Layout>
     );
