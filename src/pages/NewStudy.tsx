@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Clock, Play, Pause, RotateCcw, Save, Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import { Clock, Play, Pause, RotateCcw, Save, Plus, Trash2, Pencil, Check, X, ClipboardPaste } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ export default function NewStudy() {
   const [manualMin, setManualMin] = useState<string>("");
   const [manualSec, setManualSec] = useState<string>("");
   const [manualCs, setManualCs] = useState<string>("");
+  const [bulkTimes, setBulkTimes] = useState<string>("");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   // Edición de nombres de ciclo en línea
   const [editingCycleIndex, setEditingCycleIndex] = useState<number | null>(null);
@@ -109,6 +110,63 @@ export default function NewStudy() {
     setManualSec("");
     setManualCs("");
     toast.success("Tiempo agregado");
+  };
+
+  // Pegar múltiples tiempos desde portapapeles
+  const handleBulkAddTimes = () => {
+    if (!bulkTimes.trim()) {
+      toast.error("Ingresa tiempos en el área de texto");
+      return;
+    }
+
+    const lines = bulkTimes.split('\n').filter(line => line.trim());
+    const validTimes: number[] = [];
+    let errors = 0;
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+      // Soporta formatos: mm:ss.cc, mm:ss, ss.cc, o solo segundos
+      const timeMatch = trimmed.match(/^(\d+):(\d+)\.(\d+)$|^(\d+):(\d+)$|^(\d+)\.(\d+)$|^(\d+)$/);
+      
+      if (timeMatch) {
+        let m = 0, s = 0, c = 0;
+        
+        if (timeMatch[1] !== undefined) { // mm:ss.cc
+          m = parseInt(timeMatch[1], 10);
+          s = parseInt(timeMatch[2], 10);
+          c = parseInt(timeMatch[3], 10);
+        } else if (timeMatch[4] !== undefined) { // mm:ss
+          m = parseInt(timeMatch[4], 10);
+          s = parseInt(timeMatch[5], 10);
+        } else if (timeMatch[6] !== undefined) { // ss.cc
+          s = parseInt(timeMatch[6], 10);
+          c = parseInt(timeMatch[7], 10);
+        } else if (timeMatch[8] !== undefined) { // solo segundos
+          s = parseInt(timeMatch[8], 10);
+        }
+
+        if (s >= 0 && s <= 59 && c >= 0 && c <= 99 && m >= 0) {
+          const ms = m * 60000 + s * 1000 + c * 10;
+          validTimes.push(ms);
+        } else {
+          errors++;
+        }
+      } else {
+        errors++;
+      }
+    });
+
+    if (validTimes.length > 0) {
+      setCycles(prev => prev.map((cycle, idx) =>
+        idx === activeCycle 
+          ? { ...cycle, observations: [...cycle.observations, ...validTimes] }
+          : cycle
+      ));
+      setBulkTimes("");
+      toast.success(`${validTimes.length} tiempo(s) agregado(s)${errors > 0 ? `, ${errors} línea(s) ignorada(s)` : ''}`);
+    } else {
+      toast.error("No se encontraron tiempos válidos. Usa formatos: 01:30.50, 01:30, 45.30, o 45");
+    }
   };
 
   const handleRemoveObserved = (index: number) => {
@@ -480,6 +538,34 @@ export default function NewStudy() {
                       <Plus className="mr-2 h-5 w-5" /> Agregar
                     </Button>
                   </div>
+                </div>
+
+                {/* Pegar múltiples tiempos */}
+                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 sm:p-4 mb-4 border border-blue-200 dark:border-blue-800">
+                  <Label className="text-sm font-medium mb-2 block flex items-center gap-2">
+                    <ClipboardPaste className="h-4 w-4" />
+                    Pegar múltiples tiempos
+                  </Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Pega tiempos copiados, uno por línea. Formatos: <code className="bg-muted px-1 rounded">01:30.50</code>, <code className="bg-muted px-1 rounded">01:30</code>, <code className="bg-muted px-1 rounded">45.30</code>, o <code className="bg-muted px-1 rounded">45</code>
+                  </p>
+                  <Textarea
+                    value={bulkTimes}
+                    onChange={(e) => setBulkTimes(e.target.value)}
+                    placeholder="Ejemplo:&#10;01:25.30&#10;01:28.45&#10;01:26.12&#10;45.50&#10;52"
+                    rows={4}
+                    className="font-mono text-sm mb-3 resize-none"
+                  />
+                  <Button 
+                    type="button" 
+                    onClick={handleBulkAddTimes}
+                    variant="secondary"
+                    className="w-full h-11"
+                    disabled={!bulkTimes.trim()}
+                  >
+                    <ClipboardPaste className="mr-2 h-4 w-4" /> 
+                    Agregar todos los tiempos
+                  </Button>
                 </div>
 
                 {/* Lista de observaciones mejorada */}
