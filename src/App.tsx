@@ -13,6 +13,7 @@ import MyStudies from "./pages/MyStudies";
 import StudyDetail from "./pages/StudyDetail";
 import EditStudy from "./pages/EditStudy";
 import Analysis from "./pages/Analysis";
+import TrashStudies from "./pages/TrashStudies";
 import Profile from "./pages/Profile";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/estudio/:id" element={<ProtectedRoute><StudyDetail /></ProtectedRoute>} />
             <Route path="/estudio/:id/editar" element={<ProtectedRoute><EditStudy /></ProtectedRoute>} />
             <Route path="/analisis" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
+            <Route path="/papelera" element={<ProtectedRoute><TrashStudies /></ProtectedRoute>} />
             <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/ayuda" element={<ProtectedRoute><Help /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

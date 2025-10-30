@@ -1,7 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, FileText, BarChart3, TrendingUp } from "lucide-react";
+import { Clock, FileText, BarChart3, TrendingUp, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +17,7 @@ export default function Dashboard() {
       if (!user) return [] as any[];
       const { data, error } = await supabase
         .from('studies')
-        .select('id, status')
+        .select('id, status, deleted_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -29,23 +29,24 @@ export default function Dashboard() {
   const stats = [
     {
       title: "Estudios Totales",
-      value: studies?.length || 0,
+      value: (studies?.filter((s: any) => s.deleted_at == null).length) || 0,
       icon: FileText,
       color: "text-primary",
     },
     {
       title: "En Progreso",
-      value: studies?.filter((s: any) => s.status === 'in_progress').length || 0,
+      value: studies?.filter((s: any) => s.status === 'in_progress' && s.deleted_at == null).length || 0,
       icon: Clock,
       color: "text-accent",
     },
     {
       title: "Completados",
-      value: studies?.filter((s: any) => s.status === 'completed').length || 0,
+      value: studies?.filter((s: any) => s.status === 'completed' && s.deleted_at == null).length || 0,
       icon: TrendingUp,
       color: "text-success",
     },
   ];
+  const trashCount = studies?.filter((s: any) => s.deleted_at != null).length || 0;
 
   return (
     <Layout>
@@ -107,16 +108,16 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <BarChart3 className="h-5 w-5" />
-                Análisis
+                <Trash2 className="h-5 w-5" />
+                Papelera
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm sm:text-base text-muted-foreground mb-4">
-                Visualiza estadísticas y tendencias de tus estudios
+                Estudios eliminados recientemente. Actualmente en papelera: {trashCount}
               </p>
-              <Button variant="outline" onClick={() => navigate('/analisis')} className="w-full sm:w-auto h-11 sm:h-auto">
-                Ver Análisis
+              <Button variant="outline" onClick={() => navigate('/papelera')} className="w-full sm:w-auto h-11 sm:h-auto">
+                Ver Papelera
               </Button>
             </CardContent>
           </Card>

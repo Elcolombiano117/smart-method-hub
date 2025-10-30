@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Trash2, Eye, Clock, Pencil } from "lucide-react";
+import { FileText, Trash2, Eye, Clock, Pencil, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,7 @@ export default function MyStudies() {
       const { data, error } = await supabase
         .from('studies')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -31,14 +32,13 @@ export default function MyStudies() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('studies')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', id);
-      
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['studies'] });
-      toast.success('Estudio eliminado');
+      toast.success('Estudio movido a la papelera');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Error al eliminar');
