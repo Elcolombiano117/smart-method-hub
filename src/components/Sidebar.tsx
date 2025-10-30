@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const menuItems = [
   { title: "Dashboard", icon: Home, path: "/dashboard" },
@@ -58,6 +58,27 @@ const SidebarContent = ({ onItemClick }: { onItemClick?: () => void }) => (
 
 export const Sidebar = () => {
   const [open, setOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState<boolean>(false);
+
+  // Renderiza el sidebar de escritorio solo si el viewport es >= lg (1024px)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mql = window.matchMedia('(min-width: 1024px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    setIsDesktop(mql.matches);
+    try {
+      mql.addEventListener('change', handler);
+      return () => mql.removeEventListener('change', handler);
+    } catch {
+      // Safari legacy
+      // @ts-ignore
+      mql.addListener(handler);
+      return () => {
+        // @ts-ignore
+        mql.removeListener(handler);
+      };
+    }
+  }, []);
 
   return (
     <>
@@ -77,10 +98,12 @@ export const Sidebar = () => {
         </Sheet>
       </div>
 
-      {/* Desktop: Fixed sidebar */}
-      <aside className="hidden lg:block fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-gray-200 overflow-y-auto">
-        <SidebarContent />
-      </aside>
+      {/* Desktop: Fixed sidebar (renderizado condicionado para evitar que aparezca en móvil) */}
+      {isDesktop && (
+        <aside className="hidden lg:block fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-gray-200 overflow-y-auto">
+          <SidebarContent />
+        </aside>
+      )}
     </>
   );
 };
