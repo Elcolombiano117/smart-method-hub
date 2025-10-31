@@ -24,6 +24,12 @@ export default function Profile() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
   const [bucketIssue, setBucketIssue] = useState<null | { code?: string; message?: string }>(null);
+  // Usamos únicamente imágenes numeradas: /public/{id} (ej: /public/26)
+  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState<string | null>(null);
+  // Configuración de la API pública de avatares
+  const AVATAR_API_BASE = 'https://avatar.iran.liara.run/public';
+  const AVATAR_COUNT = 48; // número de avatares a mostrar (ajustable)
+  // Nota: la API usa rutas sin extensión, p.ej. /public/4 o /public/boy/4
 
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
@@ -162,6 +168,28 @@ export default function Profile() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const updateAvatarMutation = useMutation({
+    mutationFn: async (avatarUrl: string) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', user?.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      toast.success('Avatar seleccionado guardado');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Error al guardar avatar');
+    },
+  });
+
+  const saveSelectedAvatar = async () => {
+    if (!selectedAvatarUrl || !user?.id) return;
+    updateAvatarMutation.mutate(selectedAvatarUrl);
   };
 
   // Utilidad: recortar al centro y comprimir a WebP
@@ -351,6 +379,42 @@ export default function Profile() {
                   {isUploading ? 'Subiendo...' : 'Subir Imagen'}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2">Formatos recomendados: JPG, PNG, WEBP. Tamaño máximo ~5MB.</p>
+
+                {/* Selector de avatares públicos */}
+                <div className="mt-6">
+                  <h3 className="font-medium mb-2">Seleccionar avatar de la galería</h3>
+                  <div className="flex items-center gap-3 mb-3">
+                    <p className="text-sm text-muted-foreground">Se mostrarán avatares numerados: <code className="bg-muted px-1 rounded">/public/{'{id}'}</code></p>
+                  </div>
+
+                  <div className="grid grid-cols-6 gap-3">
+                    {Array.from({ length: AVATAR_COUNT }).map((_, i) => {
+                      const idx = i + 1;
+                      // Construimos la URL numerada: /public/{id} (ej: /public/26)
+                      const url = `${AVATAR_API_BASE}/${idx}`;
+                      const selected = selectedAvatarUrl === url;
+                      return (
+                        <button
+                          key={url}
+                          type="button"
+                          onClick={() => setSelectedAvatarUrl(url)}
+                          className={`p-0 rounded overflow-hidden border ${selected ? 'border-primary ring-2 ring-primary/30' : 'border-transparent'}`}
+                          title={`Avatar ${idx}`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt={`avatar-${idx}`} className="w-16 h-16 object-cover" />
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex items-center gap-3 mt-4">
+                    <Button variant="outline" onClick={() => setSelectedAvatarUrl(null)} disabled={updateAvatarMutation.status === 'pending'}>Limpiar selección</Button>
+                    <Button onClick={saveSelectedAvatar} disabled={!selectedAvatarUrl || updateAvatarMutation.status === 'pending'}>
+                      {updateAvatarMutation.status === 'pending' ? 'Guardando...' : 'Guardar avatar seleccionado'}
+                    </Button>
+                  </div>
+                </div>
 
                 <Dialog open={previewOpen} onOpenChange={(open) => !open && clearPreview()}>
                   <DialogContent className="sm:max-w-md">
