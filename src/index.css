@@ -111,12 +111,26 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   html {
     /* Evita que algunos navegadores móviles auto-escalezcan el texto y rompan el layout */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+  }
+
+  /* Medios fluidos para que nunca desborden en móvil */
+  img, video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Tamaños de encabezados más contenidos en pantallas pequeñas */
+  @media (max-width: 640px) {
+    h1 { font-size: 1.75rem; line-height: 2rem; }
+    h2 { font-size: 1.375rem; line-height: 1.75rem; }
+    h3 { font-size: 1.125rem; line-height: 1.5rem; }
   }
 
   /* Asegura que el contenedor raíz no provoque desbordes horizontales */
@@ -137,6 +151,13 @@ All colors MUST be HSL.
     aside.fixed { display: none !important; }
     main { padding-left: 0 !important; }
   }
+
+  /* Utilidad para ocultar scrollbars en contenedores que solo hacen overflow por seguridad */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE y Edge */
+    scrollbar-width: none;    /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
 
   .animate-fade-in {
     animation: fade-in 0.5s ease-out;

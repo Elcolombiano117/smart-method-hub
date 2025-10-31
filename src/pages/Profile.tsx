@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ export default function Profile() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
+  const [bucketIssue, setBucketIssue] = useState<null | { code?: string; message?: string }>(null);
 
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
@@ -39,11 +41,23 @@ export default function Profile() {
   });
 
   const [profileData, setProfileData] = useState({
-    full_name: profile?.full_name || '',
-    company: profile?.company || '',
-    position: profile?.position || '',
-    bio: profile?.bio || '',
+    full_name: '',
+    company: '',
+    position: '',
+    bio: '',
   });
+
+  // Sincronizar datos del perfil al cargar
+  useEffect(() => {
+    if (profile) {
+      setProfileData({
+        full_name: profile.full_name || '',
+        company: profile.company || '',
+        position: profile.position || '',
+        bio: profile.bio || '',
+      });
+    }
+  }, [profile]);
 
   const [passwordData, setPasswordData] = useState({
     newPassword: '',
@@ -118,7 +132,7 @@ export default function Profile() {
         .from('avatars')
         .upload(path, pendingBlob, { cacheControl: '3600', upsert: true, contentType: pendingBlob.type });
 
-      if (uploadError) throw uploadError;
+  if (uploadError) throw uploadError;
 
       const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(path);
       const publicUrl = publicData.publicUrl;
@@ -134,8 +148,14 @@ export default function Profile() {
       toast.success('Foto de perfil actualizada');
       clearPreview();
     } catch (err: any) {
-      if (err?.message?.includes('does not exist') || err?.statusCode === '404') {
-        toast.error('No existe el bucket "avatars" en Supabase. Créalo y habilita acceso público.');
+      const msg: string = String(err?.message || '');
+      const code = String(err?.statusCode || err?.code || '');
+      if (msg.toLowerCase().includes('does not exist') || code === '404') {
+        setBucketIssue({ code, message: msg });
+        toast.error('No existe el bucket "avatars". Aplica la migración y vuelve a intentar.');
+      } else if (code === '401' || msg.toLowerCase().includes('not allowed')) {
+        setBucketIssue({ code, message: msg });
+        toast.error('No tienes permisos para subir. Revisa políticas RLS del bucket.');
       } else {
         toast.error(err?.message || 'Error al subir la imagen');
       }
@@ -306,6 +326,19 @@ export default function Profile() {
                 <CardDescription>Sube una imagen para tu perfil</CardDescription>
               </CardHeader>
               <CardContent>
+                {bucketIssue && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertTitle>Falta configurar el bucket de avatares</AlertTitle>
+                    <AlertDescription>
+                      <ol className="list-decimal ml-4 space-y-1">
+                        <li>Abre Supabase → SQL Editor.</li>
+                        <li>Ejecuta la migración: <code className="bg-muted px-1 rounded">supabase/migrations/20251025000000_create_avatars_bucket.sql</code></li>
+                        <li>Verifica que el bucket <code>avatars</code> sea público y existan políticas de inserción para usuarios autenticados.</li>
+                      </ol>
+                      <p className="text-xs text-muted-foreground mt-2">{bucketIssue.message}</p>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <input
                   ref={fileInputRef}
                   type="file"
