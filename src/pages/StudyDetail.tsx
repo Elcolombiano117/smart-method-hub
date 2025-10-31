@@ -2,16 +2,19 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, Calendar, TrendingUp, Pencil } from "lucide-react";
+import { ArrowLeft, Clock, Calendar, TrendingUp, Pencil, FileText } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toast } from "sonner";
+import { useRef } from "react";
 
 export default function StudyDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const printRef = useRef<HTMLDivElement | null>(null);
 
   const { data: study, isLoading } = useQuery({
     queryKey: ['study', id],
@@ -77,6 +80,53 @@ export default function StudyDetail() {
   const cycles = observedData.cycles || [];
   const hasMultipleCycles = cycles.length > 0;
 
+  const handleDownloadPDF = async () => {
+    if (!printRef.current || !study) return;
+    const el = printRef.current;
+    toast.loading("Generando PDF del estudio...", { id: "study-pdf" });
+    
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      
+      const canvas = await html2canvas(el, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const safeName = study.process_name.replace(/[^a-z0-9-_]+/gi, '_');
+      pdf.save(`${safeName}_estudio.pdf`);
+      toast.success("PDF del estudio generado correctamente", { id: "study-pdf" });
+    } catch (e: any) {
+      console.error("Error al generar PDF:", e);
+      toast.error(`Error al generar PDF: ${e?.message || 'Desconocido'}`, { id: "study-pdf" });
+    }
+  };
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -92,13 +142,18 @@ export default function StudyDetail() {
             <h1 className="text-3xl sm:text-4xl font-bold mb-2 break-words">{study.process_name}</h1>
             <p className="text-muted-foreground">{study.description || 'Sin descripción'}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {getStatusBadge(study.status)}
             <Button variant="outline" size="sm" onClick={() => navigate(`/estudio/${study.id}/editar`)}>
               <Pencil className="mr-2 h-4 w-4" /> Editar
             </Button>
+            <Button variant="default" size="sm" onClick={handleDownloadPDF}>
+              <FileText className="mr-2 h-4 w-4" /> Descargar PDF
+            </Button>
           </div>
         </div>
+
+        <div ref={printRef}>
 
         {/* Información General */}
         <Card>
@@ -220,6 +275,7 @@ export default function StudyDetail() {
             </CardContent>
           </Card>
         )}
+        </div>
       </div>
     </Layout>
   );

@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Trash2, Eye, Clock, Pencil } from "lucide-react";
+import { FileText, Trash2, Eye, Clock, Pencil, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,6 +82,99 @@ export default function MyStudies() {
       toast.error(error?.message || 'Error al eliminar');
     },
   });
+
+  const handleQuickDownloadPDF = async (study: any) => {
+    toast.loading("Generando PDF...", { id: `pdf-${study.id}` });
+    try {
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      
+      let yPos = 20;
+      const lineHeight = 7;
+      const margin = 20;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      
+      // Título
+      pdf.setFontSize(18);
+      pdf.text(study.process_name || 'Estudio', margin, yPos);
+      yPos += lineHeight * 1.5;
+      
+      // Descripción
+      if (study.description) {
+        pdf.setFontSize(11);
+        pdf.text(study.description, margin, yPos);
+        yPos += lineHeight;
+      }
+      yPos += lineHeight;
+      
+      // Información general
+      pdf.setFontSize(14);
+      pdf.text('Información General', margin, yPos);
+      yPos += lineHeight;
+      
+      pdf.setFontSize(10);
+      pdf.text(`Fecha: ${format(new Date(study.created_at), 'dd MMMM yyyy', { locale: es })}`, margin, yPos);
+      yPos += lineHeight;
+      pdf.text(`Ciclos: ${study.cycles_count}`, margin, yPos);
+      yPos += lineHeight;
+      pdf.text(`Calificación: ${study.performance_rating}%`, margin, yPos);
+      yPos += lineHeight;
+      pdf.text(`Suplemento: ${study.supplement_percentage}%`, margin, yPos);
+      yPos += lineHeight * 2;
+      
+      // Tiempos
+      pdf.setFontSize(14);
+      pdf.text('Tiempos Calculados', margin, yPos);
+      yPos += lineHeight;
+      
+      pdf.setFontSize(10);
+      pdf.text(`Tiempo Promedio: ${study.average_time?.toFixed(2) || 0} s`, margin, yPos);
+      yPos += lineHeight;
+      pdf.text(`Tiempo Normal: ${study.normal_time?.toFixed(2) || 0} s`, margin, yPos);
+      yPos += lineHeight;
+      pdf.text(`Tiempo Estándar: ${study.standard_time?.toFixed(2) || 0} s`, margin, yPos);
+      yPos += lineHeight * 2;
+      
+      // Observaciones por ciclo (si existen)
+      const observedData = typeof study.observed_times === 'object' && study.observed_times !== null 
+        ? study.observed_times as { cycles?: any[] } 
+        : {};
+      const cycles = observedData.cycles || [];
+      
+      if (cycles.length > 0) {
+        pdf.setFontSize(14);
+        pdf.text('Detalle por Ciclos', margin, yPos);
+        yPos += lineHeight;
+        
+        cycles.forEach((cycle: any, idx: number) => {
+          const observations = cycle.observations || [];
+          const average = observations.length > 0 
+            ? observations.reduce((a: number, b: number) => a + b, 0) / observations.length / 1000 
+            : 0;
+          
+          pdf.setFontSize(11);
+          pdf.text(`${cycle.name || `Ciclo ${idx + 1}`}`, margin, yPos);
+          yPos += lineHeight * 0.8;
+          
+          pdf.setFontSize(9);
+          pdf.text(`Observaciones: ${observations.length} | Promedio: ${average.toFixed(2)} s`, margin + 5, yPos);
+          yPos += lineHeight;
+          
+          if (yPos > 270) {
+            pdf.addPage();
+            yPos = 20;
+          }
+        });
+      }
+      
+      const safeName = study.process_name.replace(/[^a-z0-9-_]+/gi, '_');
+      pdf.save(`${safeName}_estudio.pdf`);
+      toast.success("PDF generado", { id: `pdf-${study.id}` });
+    } catch (e: any) {
+      console.error("Error al generar PDF:", e);
+      toast.error(`Error: ${e?.message || 'Desconocido'}`, { id: `pdf-${study.id}` });
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "outline", label: string }> = {
@@ -185,7 +278,7 @@ export default function MyStudies() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -203,6 +296,15 @@ export default function MyStudies() {
                     >
                       <Pencil className="mr-2 h-4 w-4" />
                       Editar
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleQuickDownloadPDF(study)}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      PDF
                     </Button>
                     <Button
                       variant="destructive"
