@@ -17,6 +17,7 @@ import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 type Study = {
   id: string;
@@ -263,62 +264,74 @@ export default function Analysis() {
                 if (!printRef.current) return;
                 const content = printRef.current;
                 const printWindow = window.open("", "_blank", "width=1024,height=768");
-                if (!printWindow) return;
+                if (!printWindow) {
+                  toast.error("No se pudo abrir la ventana de impresión. Verifica que no esté bloqueada por el navegador.");
+                  return;
+                }
                 const doc = printWindow.document;
                 doc.open();
                 // Copiar estilos
                 const styles = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
                   .map((node) => (node as HTMLElement).outerHTML)
                   .join("\n");
-                doc.write(`<!doctype html><html><head><meta charset='utf-8'/>${styles}<title>Análisis</title></head><body><div id='print-root'>${content.innerHTML}</div></body></html>`);
+                doc.write(`<!doctype html><html><head><meta charset='utf-8'/>${styles}<title>Análisis - ${activeStudy?.process_name || 'Estudio'}</title></head><body><div id='print-root'>${content.innerHTML}</div></body></html>`);
                 doc.close();
                 // Esperar a que carguen los estilos y SVG
                 printWindow.focus();
                 setTimeout(() => {
                   printWindow.print();
                   printWindow.close();
-                }, 400);
+                }, 500);
               }}>
-                <FileText className="h-4 w-4 mr-2" /> Exportar PDF
+                <FileText className="h-4 w-4 mr-2" /> Exportar PDF (Imprimir)
               </Button>
               <Button variant="default" size="sm" onClick={async () => {
-                if (!printRef.current) return;
+                if (!printRef.current || !activeStudy) return;
                 const el = printRef.current;
+                toast.loading("Generando PDF...", { id: "pdf-gen" });
                 try {
-                  // Cargar libs dinámicamente para evitar problemas de tipos
-                  const { default: html2canvas } = await import('html2canvas') as any;
-                  const { default: JsPDF } = await import('jspdf') as any;
-                  // Usar html2canvas para rasterizar el contenido
+                  // Cargar libs dinámicamente
+                  const html2canvas = (await import('html2canvas')).default;
+                  const { jsPDF } = await import('jspdf');
+                  
+                  // Capturar el contenido como canvas
                   const canvas = await html2canvas(el, {
-                    backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--background') || '#ffffff',
+                    backgroundColor: '#ffffff',
                     scale: 2,
                     useCORS: true,
+                    logging: false,
+                    allowTaint: true,
                   });
-                  const imgData = canvas.toDataURL('image/png');
-                  const pdf = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'p' });
 
-                  const pageWidth = 210; // A4 mm
-                  const pageHeight = 297; // A4 mm
+                  const imgData = canvas.toDataURL('image/png');
+                  const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+                  const pageWidth = pdf.internal.pageSize.getWidth();
+                  const pageHeight = pdf.internal.pageSize.getHeight();
                   const imgWidth = pageWidth;
                   const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
                   let heightLeft = imgHeight;
                   let position = 0;
 
-                  pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+                  // Primera página
+                  pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
                   heightLeft -= pageHeight;
+
+                  // Agregar páginas adicionales si el contenido es largo
                   while (heightLeft > 0) {
-                    position = heightLeft - imgHeight; // posición negativa para seguir la imagen
-                    pdf.addPage('a4', 'p');
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
                     heightLeft -= pageHeight;
                   }
 
-                  const safeName = (activeStudy?.process_name || 'analisis').replace(/[^a-z0-9-_]+/gi, '_');
+                  const safeName = activeStudy.process_name.replace(/[^a-z0-9-_]+/gi, '_');
                   pdf.save(`${safeName}_analisis.pdf`);
-                } catch (e) {
-                  console.error(e);
-                  alert('No se pudo generar el PDF automáticamente. Usa la opción Exportar PDF (Imprimir) para guardar.');
+                  toast.success("PDF generado correctamente", { id: "pdf-gen" });
+                } catch (e: any) {
+                  console.error("Error al generar PDF:", e);
+                  toast.error(`Error al generar PDF: ${e?.message || 'Desconocido'}. Usa la opción "Exportar PDF (Imprimir)" como alternativa.`, { id: "pdf-gen" });
                 }
               }}>
                 <FileText className="h-4 w-4 mr-2" /> Descargar PDF
